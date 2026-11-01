@@ -1764,6 +1764,7 @@
       imgU.src = 'assets/ugreen_capture.png';
     }
 
+    // 모든 캡처 이미지(스마트폰 쿠팡/네이버 앱 화면, PC 브라우저 캡처)에서 상품 누끼 영역을 스마트 자동 추출
     function cropProductPhotoFromScreenshot(dataUrl) {
       return new Promise((resolve) => {
         const img = new Image();
@@ -1773,10 +1774,24 @@
           const ctx = canvas.getContext('2d');
           ctx.fillStyle = '#ffffff';
           ctx.fillRect(0, 0, 400, 400);
-          if (img.width > img.height * 0.85) {
-            ctx.drawImage(img, img.width * 0.03, img.height * 0.15, img.width * 0.42, img.height * 0.50, 0, 0, 400, 400);
+
+          const w = img.width;
+          const h = img.height;
+          const ratio = h / w;
+
+          if (ratio > 1.3) {
+            // 1) 스마트폰 세로 캡처: 상단 상태바(시계, 배터리) 및 앱바를 건너뛰고 대표 상품 정사각형 영역 자동 추출
+            const startY = Math.round(h * 0.08);
+            const cropH = Math.min(w, Math.round(h * 0.52));
+            ctx.drawImage(img, 0, startY, w, cropH, 0, 0, 400, 400);
+          } else if (ratio < 0.85) {
+            // 2) PC/태블릿 가로 캡처: 좌측 대표 상품 사진 영역(3% ~ 45%) 자동 추출
+            const cropW = Math.round(w * 0.42);
+            const cropH = Math.round(h * 0.55);
+            ctx.drawImage(img, Math.round(w * 0.04), Math.round(h * 0.12), cropW, cropH, 0, 0, 400, 400);
           } else {
-            ctx.drawImage(img, 0, 0, img.width, Math.min(img.height, img.width), 0, 0, 400, 400);
+            // 3) 이미 상품 중심의 정방형(1:1) 사진이거나 크롭된 이미지
+            ctx.drawImage(img, 0, 0, w, h, 0, 0, 400, 400);
           }
           resolve(canvas.toDataURL('image/png'));
         };
@@ -1788,6 +1803,11 @@
     // ===============================================================
     // 🌐 인터넷 익스플로러 / 크롬 방식 100% 실제 웹페이지 렌더링 엔진
     // ===============================================================
+    
+    function openCurrentInNewTab() {
+      const url = document.getElementById('ieAddressBar').value.trim() || 'https://www.naver.com';
+      window.open(url, '_blank', 'noopener');
+    }
     function navigateAddressBar() {
       const raw = document.getElementById('ieAddressBar').value.trim();
       if (!raw) return;
@@ -2235,6 +2255,75 @@
     }
 
     // 구글 검색(www.google.com/search?q=...) 전용 실제 Google 모바일 검색 & Google 쇼핑 결과 페이지 생성
+        function buildPortalFallbackHtml(displayUrl, inputStr) {
+      const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      const cleanUrl = esc(displayUrl || 'https://www.naver.com');
+      return `<!DOCTYPE html>
+      <html lang="ko">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          * { box-sizing: border-box; }
+          body { margin: 0; padding: 18px 14px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f8fafc; color: #1e293b; }
+          .portal-box { max-width: 440px; margin: 0 auto; text-align: center; }
+          .portal-header { background: linear-gradient(135deg, #03c75a 0%, #029f48 100%); color: #fff; padding: 16px 14px; border-radius: 16px; margin-bottom: 16px; box-shadow: 0 4px 14px rgba(3,199,90,0.25); }
+          .portal-header h2 { margin: 0; font-size: 16px; font-weight: 800; letter-spacing: -0.3px; }
+          .portal-header p { margin: 5px 0 0; font-size: 11px; opacity: 0.92; }
+          .search-wrap { display: flex; gap: 6px; margin-bottom: 12px; }
+          .search-input { flex: 1; border: 2px solid #03c75a; border-radius: 12px; padding: 10px 12px; font-size: 13px; font-weight: 600; outline: none; background: #fff; }
+          .search-btn { background: #03c75a; color: #fff; border: none; border-radius: 12px; padding: 10px 14px; font-weight: 800; font-size: 13px; cursor: pointer; shrink-0; }
+          .chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 16px; }
+          .chip { background: #fff; border: 1px solid #cbd5e1; border-radius: 20px; padding: 6px 11px; font-size: 11px; font-weight: 700; color: #334155; text-decoration: none; cursor: pointer; transition: all 0.15s; }
+          .chip:active { transform: scale(0.96); }
+          .direct-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+          .open-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%; background: #03c75a; color: #fff; text-decoration: none; font-size: 13px; font-weight: 800; padding: 12px; border-radius: 12px; margin-top: 10px; box-shadow: 0 3px 10px rgba(3,199,90,0.25); }
+          .open-btn:hover { background: #02b350; }
+          .info-text { font-size: 11px; color: #64748b; line-height: 1.5; text-align: left; margin: 8px 0 0; }
+        </style>
+      </head>
+      <body>
+        <div class="portal-box">
+          <div class="portal-header">
+            <h2>N 네이버 & 오픈마켓 쇼핑 포털</h2>
+            <p>검색어를 입력하시거나 아래 추천 상품을 누르면 즉시 호구검사합니다</p>
+          </div>
+          <div class="search-wrap">
+            <input id="pSearch" class="search-input" type="text" placeholder="검색할 상품명 입력 (예: 유그린 165W, 맥세이프 링)" onkeydown="if(event.key==='Enter')doSearch()">
+            <button class="search-btn" onclick="doSearch()">검색</button>
+          </div>
+          <div class="chips">
+            <span class="chip" onclick="quick('유그린 넥소드 165W 보조배터리')">⚡ 유그린 165W</span>
+            <span class="chip" onclick="quick('투키 67W GaN 충전기')">🔌 투키 67W</span>
+            <span class="chip" onclick="quick('매트 맥세이프 링 그립톡')">📱 맥세이프 링</span>
+            <span class="chip" onclick="quick('갤럭시 워치 무선 충전기 C타입')">⌚ 워치 충전기</span>
+            <span class="chip" onclick="quick('갤럭시 S26 울트라 범퍼 케이스')">🛡️ S26 케이스</span>
+          </div>
+          <div class="direct-card">
+            <div style="font-size:13px;font-weight:700;color:#1e293b;">🌐 네이버 / 쇼핑몰 공식 사이트 열기</div>
+            <p class="info-text">
+              * 웹 브라우저의 국제 보안 정책(X-Frame-Options)상 네이버 원본 웹사이트는 아래 버튼을 눌러 새 창에서 안전하게 이용하실 수 있습니다.<br>
+              * 상품을 보신 뒤 링크를 복사하거나 화면을 캡처해서 [호구검사]에 붙여넣으시면 즉시 알리 최저가와 비교됩니다.
+            </p>
+            <a href="${cleanUrl}" target="_blank" rel="noopener" class="open-btn">
+              네이버 공식 사이트 새 창에서 열기 ↗
+            </a>
+          </div>
+        </div>
+        <script>
+          function doSearch() {
+            const v = document.getElementById('pSearch').value.trim();
+            if (!v) return;
+            window.parent.postMessage({ type: 'HOGUCUT_RUN_SEARCH', query: v }, '*');
+          }
+          function quick(q) {
+            window.parent.postMessage({ type: 'HOGUCUT_RUN_SEARCH', query: q }, '*');
+          }
+        <\/script>
+      </body>
+      </html>`;
+    }
+
     async function buildGoogleSearchPageHtml(fetchUrl) {
       let q = '';
       try {
@@ -2894,9 +2983,7 @@
           iframe.srcdoc = await transformRealHtmlForIframe(rawHtml, naverSearchUrl);
           document.getElementById('ieSubStatus').innerText = `실제 검색 결과 페이지가 로드되었습니다.`;
         } catch (e2) {
-          iframe.srcdoc = `<div style="padding:40px 20px;text-align:center;font-family:sans-serif;color:#333;">
-            <h3>페이지 연결 지연</h3><p style="font-size:13px;color:#666;">상단 새로고침(↻) 버튼이나 [N 네이버] 버튼을 다시 눌러주세요.</p>
-          </div>`;
+          iframe.srcdoc = buildPortalFallbackHtml(displayUrl, inputStr);
         }
       } finally {
         if (loadingBar) loadingBar.classList.add('hidden');
@@ -3268,6 +3355,17 @@
         detectedTitle = lines[0].slice(0, 45);
       }
 
+      // 스마트 누끼 업그레이드: 판독된 상품명으로 네이버 쇼핑 공식 1:1 고화질 누끼 썸네일 실시간 동기화
+      let bestThumb = croppedThumb;
+      if (detectedTitle && detectedTitle.length >= 3 && detectedTitle !== 'AI 이미지 판독 상품') {
+        try {
+          const liveItems = await fetchLiveShoppingItemsFast(detectedTitle);
+          if (liveItems && liveItems.length > 0 && liveItems[0].image) {
+            bestThumb = liveItems[0].image;
+          }
+        } catch (e) {}
+      }
+
       const precise = buildPreciseAliLinks(detectedTitle, detectedTitle);
       const krPrice = detectedPrice || 15900;
       const aliPrice = Math.max(2400, Math.round((krPrice * 0.40) / 100) * 100);
@@ -3278,10 +3376,10 @@
         kr_price: krPrice,
         kr_shipping: 0,
         kr_total: krPrice,
-        kr_image: croppedThumb,
+        kr_image: bestThumb || croppedThumb,
         ali_title: `[알리 직구 대조] ${precise.cleanTitle}`,
         ali_price: aliPrice,
-        ali_image: croppedThumb,
+        ali_image: bestThumb || croppedThumb,
         ali_url: precise.aliDirectUrl,
         ali_visual_url: precise.aliVisualUrl,
         saved_amount: Math.max(0, krPrice - aliPrice),
