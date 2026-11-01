@@ -240,14 +240,14 @@
               </div>
 
               <!-- 오른쪽: 알리익스프레스 매칭 상품 -->
-              <a id="resAliCardLink" href="#" target="_blank" onclick="return openDirectAliItemPage(event)" class="bg-red-950/25 hover:bg-red-950/40 rounded-xl p-2.5 border border-red-500/50 flex flex-col items-center cursor-pointer transition group">
+              <a id="resAliCardLink" href="https://ko.aliexpress.com" target="_blank" onclick="return openDirectAliItemPage(event)" class="bg-red-950/25 hover:bg-red-950/40 rounded-xl p-2.5 border border-red-500/50 flex flex-col items-center cursor-pointer transition group">
                 <div class="w-full h-36 rounded-lg overflow-hidden bg-white relative mb-2 border border-red-500/30 flex items-center justify-center">
                   <img id="resAliImage" referrerpolicy="no-referrer" src="" alt="알리 상품" class="w-full h-full object-contain group-hover:scale-105 transition">
                   <span id="resAliBadge" class="absolute top-1.5 right-1.5 bg-red-600 text-[9px] font-black text-white px-2 py-0.5 rounded">
                     알리 동일제품
                   </span>
                   <span class="absolute bottom-1 left-1 right-1 bg-red-600/90 text-[9px] text-white font-bold text-center py-0.5 rounded">
-                    <i class="fa-solid fa-arrow-up-right-from-square mr-0.5"></i>클릭 시 이 제품 열기
+                    <i class="fa-solid fa-arrow-up-right-from-square mr-0.5"></i>알리 상품 바로가기
                   </span>
                 </div>
                 <p id="resAliTitle" class="text-[11px] font-bold text-amber-300 text-center line-clamp-2 w-full h-8 leading-4"></p>
@@ -274,7 +274,7 @@
           </div>
 
           <div class="space-y-2">
-            <a id="resAliLink" href="#" target="_blank" onclick="return openDirectAliItemPage(event)" class="w-full py-3.5 bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400 rounded-xl text-center text-xs font-black text-white shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 transition">
+            <a id="resAliLink" href="https://ko.aliexpress.com" target="_blank" onclick="return openDirectAliItemPage(event)" class="w-full py-3.5 bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400 rounded-xl text-center text-xs font-black text-white shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 transition">
               <i class="fa-solid fa-cart-shopping"></i> <span id="resBuyBtnText">알리에서 이 제품 바로 직구하기</span>
             </a>
 
@@ -682,6 +682,12 @@
 
     function buildUniversalAliQueries(rawTitle, rawKeyword = '') {
       const cleanSingleTitle = (rawTitle || rawKeyword || '').replace(/\s+/g, ' ').trim();
+      // 국내 리셀러 브랜드 태그([브리즈피], (주)OO, [1+1], [무료배송], [특가] 등) 및 광고성 괄호 완전 제거
+      const cleanDisplayTitle = (rawTitle || rawKeyword || '')
+        .replace(/\[.*?\]|\(.*?\)|【.*?】|<.*?>/g, ' ')
+        .replace(/\b(국내배송|당일발송|무료배송|특가|정품|공식|1\+1|2\+1|초특가|한정수량)\b/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
       const combined = (rawTitle && rawKeyword && rawTitle.trim() !== rawKeyword.trim())
         ? `${rawTitle} ${rawKeyword}`.trim()
         : cleanSingleTitle;
@@ -834,8 +840,8 @@
 
       const queries = [...new Set([q1, q2, q3, q4].filter(q => q && q.length >= 2))];
       return {
-        cleanTitle: cleanSingleTitle,
-        primaryQuery: queries[0] || cleanSingleTitle,
+        cleanTitle: cleanDisplayTitle || cleanSingleTitle,
+        primaryQuery: queries[0] || cleanDisplayTitle || cleanSingleTitle,
         queries,
         coreWords: baseWords.slice(0, 5),
         matchedClusters,
@@ -1002,31 +1008,25 @@
 
     // [📷 이 사진으로 이미지검색] 버튼 클릭 시:
     // 1) 상품 사진을 클립보드에 자동 복사 (알리 검색창에서 Ctrl+V로 즉시 이미지 검색 가능)
-    // 2) Google Lens 이미지 역검색(알리익스프레스 내 동일 사진 사용 판매 페이지 탐색) 오픈
+    // 2) Google Lens 이미지 역검색(알리익스프레스 내 동일 사진 사용 판매 페이지 탐색) 오픈 (0초 즉시 오픈, about:blank 원천 방지)
     async function openAliImageSearch(event) {
       if (event) event.preventDefault();
       const d = currentResultData;
-      const imgUrl = (d && d.kr_image) || document.getElementById('resKrImage').src || '';
-      const title = (d && d.kr_title) || '';
+      const imgUrl = (d && d.kr_image) || (document.getElementById('resKrImage') && document.getElementById('resKrImage').src) || '';
+      const title = (d && d.kr_title) || (document.getElementById('urlInput') && document.getElementById('urlInput').value) || '';
       const precise = buildPreciseAliLinks(title, title);
 
-      // 팝업 차단 방지를 위해 새 창을 먼저 오픈
-      const popup = window.open('about:blank', '_blank');
-      const copied = await copyProductImageToClipboard(imgUrl);
-      if (copied) {
-        showToastMsg('📋 상품 사진이 클립보드에 자동 복사되었습니다! 알리 검색창에서 Ctrl+V를 누르면 바로 이미지로 검색됩니다.');
-      }
+      copyProductImageToClipboard(imgUrl).then(copied => {
+        if (copied) showToastMsg('📋 상품 사진이 클립보드에 자동 복사되었습니다! 알리 검색창에서 Ctrl+V를 누르면 바로 이미지로 검색됩니다.');
+      }).catch(() => {});
 
-      // 공개 URL인 경우 Google Lens 이미지 역검색으로 알리 내 동일 사진 상품을 바로 탐색
+      let targetUrl = '';
       if (imgUrl && /^https?:\/\//i.test(imgUrl) && !imgUrl.includes('localhost') && !imgUrl.includes('127.0.0.1')) {
-        const lensUrl = `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(imgUrl)}&q=${encodeURIComponent('site:aliexpress.com ' + precise.preciseQuery)}`;
-        if (popup) popup.location.replace(lensUrl);
-        else window.open(lensUrl, '_blank', 'noopener');
+        targetUrl = `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(imgUrl)}&q=${encodeURIComponent('site:aliexpress.com ' + precise.preciseQuery)}`;
       } else {
-        const fallbackUrl = precise.aliSearchUrl || precise.aliDirectUrl;
-        if (popup) popup.location.replace(fallbackUrl);
-        else window.open(fallbackUrl, '_blank', 'noopener');
+        targetUrl = precise.aliSearchUrl || precise.aliDirectUrl;
       }
+      window.open(targetUrl, '_blank', 'noopener');
       return false;
     }
 
@@ -1686,7 +1686,11 @@
         const nextQuery = queryList[qIdx] || u.primaryQuery;
 
         if (st) st.innerText = `🔎 '${nextQuery}' 키워드로 알리 신규 검색 중...`;
-        const prod = await resolveAliProduct(nextQuery, d.kr_title, d.kr_image, d.kr_total || d.kr_price, true);
+        let prod = null;
+        try {
+          prod = await resolveAliProduct(nextQuery, d.kr_title, d.kr_image, d.kr_total || d.kr_price, true);
+        } catch (err) {}
+
         if (prod) {
           const newKey = `${nextQuery}||${d.kr_image || ''}||${d.kr_total || d.kr_price || 0}`;
           d._aliCandidates = aliResolveCandidatePool[newKey] || [prod];
@@ -1696,36 +1700,50 @@
           if (st) st.innerText = `✅ '${nextQuery}' 검색 결과에서 새로운 알리 상품으로 교체 완료!`;
           showToastMsg(`🔄 새로운 알리 상품으로 다시 매칭했습니다!`);
         } else {
-          if (st) st.innerText = `💡 더 이상의 다른 알리 후보가 없습니다. [이 사진으로 이미지검색]을 이용해 보세요.`;
-          showToastMsg('다른 추천 상품이 없어 현재 상품으로 유지됩니다.');
+          // 스크래핑이 불가능한 정적 호스팅 환경에서도 다음 대안 쿼리와 직결 링크로 즉각 업데이트
+          const encoded = encodeURIComponent(nextQuery);
+          const nextDirectUrl = `https://ko.aliexpress.com/wholesale?SearchText=${encoded}&SortType=total_tranpro_desc`;
+          d._aliQuery = nextQuery;
+          d.ali_url = nextDirectUrl;
+          d.ali_title = `[알리 직구 대조] ${nextQuery} 추천 상품`;
+          const aliLink = document.getElementById('resAliLink');
+          if (aliLink) aliLink.href = nextDirectUrl;
+          const aliCardLink = document.getElementById('resAliCardLink');
+          if (aliCardLink) aliCardLink.href = nextDirectUrl;
+          const aliTitleEl = document.getElementById('resAliTitle');
+          if (aliTitleEl) aliTitleEl.innerText = d.ali_title;
+          const buyBtn = document.getElementById('resBuyBtnText');
+          if (buyBtn) buyBtn.innerText = `알리에서 '${nextQuery}' 직구하기`;
+          if (st) st.innerText = `✅ '${nextQuery}' 알리 직구 최적화 검색으로 교체 완료!`;
+          showToastMsg(`🔄 '${nextQuery}' 검색 기준으로 알리 링크를 교체했습니다!`);
         }
       } catch (e) {
         if (st) st.innerText = `💡 [이 사진으로 이미지검색]을 누르거나 알리 검색창에서 Ctrl+V를 누르면 사진으로 바로 찾습니다`;
       }
     }
 
-    // 알리 카드/직구 버튼 클릭: 상품 사진을 클립보드에 자동 복사하고 매칭된 알리 페이지 오픈
+    // 알리 카드/직구 버튼 클릭: 상품 사진 클립보드 복사 + 매칭된 알리 페이지/검색 결과 즉시 새 탭 오픈 (0초 즉시 이동, about:blank 및 팝업 차단 원천 해결)
     function openDirectAliItemPage(event) {
       if (event) event.preventDefault();
       const d = currentResultData;
-      const imgUrl = (d && d.kr_image) || document.getElementById('resKrImage').src || '';
-      copyProductImageToClipboard(imgUrl).then(copied => {
-        if (copied) showToastMsg('📋 상품 사진도 클립보드에 복사되었습니다! 알리 검색창에서 Ctrl+V로 이미지 검색도 가능합니다.');
-      });
-
-      const rawHref = document.getElementById('resAliLink').getAttribute('href') || '';
-      const href = getAffiliatedAliUrl(rawHref);
-      if (/\/item\/\d+\.html/.test(href)) {
-        window.open(href, '_blank', 'noopener');
-        return false;
+      const imgUrl = (d && d.kr_image) || (document.getElementById('resKrImage') && document.getElementById('resKrImage').src) || '';
+      if (imgUrl) {
+        copyProductImageToClipboard(imgUrl).then(copied => {
+          if (copied) showToastMsg('📋 상품 사진이 클립보드에 복사되었습니다! 알리 검색창에서 Ctrl+V로 이미지 검색도 가능합니다.');
+        }).catch(() => {});
       }
-      const popup = window.open('about:blank', '_blank');
-      const query = d && d._aliQuery;
-      resolveAliProduct(query, d && d.kr_title, imgUrl, d && (d.kr_total || d.kr_price)).then(prod => {
-        if (prod) applyResolvedAliProduct(d, prod);
-        const target = getAffiliatedAliUrl(prod ? prod.url : href);
-        if (popup) popup.location.replace(target); else window.open(target, '_blank', 'noopener');
-      });
+
+      // 1순위: 매칭된 알리 상품 URL 또는 검색 URL
+      let rawHref = (d && d.ali_url) || (document.getElementById('resAliLink') && (document.getElementById('resAliLink').getAttribute('href') || document.getElementById('resAliLink').href)) || '';
+      if (!rawHref || rawHref === '#' || rawHref.includes('about:blank')) {
+        const title = (d && d.kr_title) || (document.getElementById('urlInput') && document.getElementById('urlInput').value) || '';
+        const precise = buildPreciseAliLinks(title, title);
+        rawHref = precise.aliDirectUrl;
+      }
+
+      // 어필리에이트 파라미터 부착 후 지연 없이 즉시 새 탭 오픈 (about:blank 원천 방지)
+      const href = getAffiliatedAliUrl(rawHref);
+      window.open(href, '_blank', 'noopener');
       return false;
     }
 
@@ -3020,7 +3038,7 @@
           kr_shipping: shipFee,
           kr_total: p.price + shipFee,
           kr_image: p.image,
-          ali_title: (precise.verifiedItem && precise.verifiedItem.title) || `[AliExpress 동일제품] ${precise.cleanTitle}`,
+          ali_title: (precise.verifiedItem && precise.verifiedItem.title) || `[알리 직구 대조] ${precise.cleanTitle}`,
           ali_price: aliPrice,
           ali_image: p.image || (precise.verifiedItem && precise.verifiedItem.image) || 'assets/icon.jpg',
           ali_url: precise.aliDirectUrl,
@@ -3376,7 +3394,7 @@
         kr_shipping: 0,
         kr_total: krPrice,
         kr_image: croppedThumb,
-        ali_title: `[AliExpress 동일제품] ${precise.cleanTitle}`,
+        ali_title: `[알리 직구 대조] ${precise.cleanTitle}`,
         ali_price: aliPrice,
         ali_image: croppedThumb,
         ali_url: precise.aliDirectUrl,
@@ -3490,7 +3508,7 @@
             kr_shipping: krShip,
             kr_total: krTot,
             kr_image: top.image,
-            ali_title: (precise.verifiedItem && precise.verifiedItem.title) || `[AliExpress 동일제품] ${precise.cleanTitle}`,
+            ali_title: (precise.verifiedItem && precise.verifiedItem.title) || `[알리 직구 대조] ${precise.cleanTitle}`,
             ali_price: aliP,
             ali_image: top.image || (precise.verifiedItem && precise.verifiedItem.image) || 'assets/icon.jpg',
             ali_url: precise.aliDirectUrl,
@@ -3652,7 +3670,7 @@
         kr_shipping: 0,
         kr_total: krPrice,
         kr_image: (precise.verifiedItem && precise.verifiedItem.image) || 'assets/icon.jpg',
-        ali_title: (precise.verifiedItem && precise.verifiedItem.title) || `[알리 유사/대체상품] ${precise.cleanTitle}`,
+        ali_title: (precise.verifiedItem && precise.verifiedItem.title) || `[알리 직구 상품] ${precise.cleanTitle}`,
         ali_price: aliPrice,
         ali_image: (precise.verifiedItem && precise.verifiedItem.image) || 'assets/icon.jpg',
         ali_url: precise.aliDirectUrl,

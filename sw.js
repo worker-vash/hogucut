@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hogucut-v5.8';
+const CACHE_NAME = 'hogucut-v5.9';
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();
