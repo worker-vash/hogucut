@@ -543,7 +543,7 @@
     function extractDevicePrefix(text) {
       const t = (text || '').trim();
       const parts = [];
-      if (/갤럭시\s*워치|갤워치|워치\s*[4-9]|galaxy\s*watch/i.test(t)) {
+      if (/갤럭시\s*워치|워치|워치\s*[4-9]|galaxy\s*watch/i.test(t)) {
         parts.push('갤럭시 워치');
         const wNum = t.match(/워치\s*(\d+)/i) || t.match(/(?:울트라)/i);
         if (wNum) parts.push(wNum[1] || wNum[0]);
@@ -564,125 +564,42 @@
         if (ipM) parts.push(ipM[1]);
         if (/프로\s*맥스|promax|pro\s*max/i.test(t)) parts.push('프로맥스');
         else if (/프로|pro/i.test(t)) parts.push('프로');
+        else if (/플러스|plus/i.test(t)) parts.push('플러스');
       }
       return parts.join(' ');
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // [범용 상품명 구조 분석 & 자동 키워드 압축 엔진 (Universal Query Builder)]
-    // 특정 상품을 수동으로 등록하지 않아도, 세상의 모든 상품명에서
-    // 1) 쇼핑몰 홍보어/산지/스토어명 불용어를 걷어내고,
-    // 2) 붙여 쓴 복합어(아기목폴라, 긴팔티셔츠 등)를 분리하며,
-    // 3) 나열된 동의어(아기/유아/키즈/주니어/초등/여아 등)의 중복을 제거해
-    // 알리익스프레스 검색에 최적화된 2~4단어 핵심 검색어와 필수 속성 그룹을 자동 생성합니다.
-    // ─────────────────────────────────────────────────────────────────────────
     const UNIVERSAL_STOPWORDS = new Set([
-      '1위', 'best', 'celeste', 'haze', 'hit', 'hot', 'new', 'n뉴스토어',
-      'rrt', '가성비', '가을겨울', '감성', '강력', '강추', '겸용', '경량',
-      '고급', '고급스러운', '공식', '공식몰', '공용', '교체용', '국내배송', '국내산',
-      '국내생산', '국내제작', '국산', '귀여운', '급속', '기본', '길이조절', '깔끔한',
-      '나하로', '남녀공용', '남여공용', '내열', '다용도', '단독', '당일발송', '대박',
-      '대용량', '더에르고', '데일리', '디지지', '러블리', '럭셔리', '로랜텍', '로켓배송',
-      '만능', '메이드인코리아', '모션감지', '모음', '모음전', '무료배송', '무소음', '무압박',
-      '미니', '바이디어', '반영구', '범용', '베이직', '베지터블', '봄가을', '부테로',
-      '브리즈피', '블링블링', '빠른건조', '빠른배송', '사계절', '사생활보호', '사은품', '사피아노',
-      '세일', '세트', '셀프', '수동', '스마트', '슬라이딩', '슬림', '신상',
-      '신상품', '심플한', '앱송', '예쁜', '오늘출발', '오드몽드', '오플', '우먼스9999',
-      '원목', '유행', '이동식', '이벤트', '이쁜', '인기', '인싸', '일체형',
-      '자동', '저소음', '전용', '접이식', '정밀', '정보보호', '정품', '증정',
-      '직구', '짱짱한', '쫀쫀한', '초강력', '초경량', '초슬림', '초특가', '최저가',
-      '추천', '충전식', '토고', '특가', '튼튼한', '패키지', '편안한', '편한',
-      '폭탄', '푸에블로', '풀커버', '프리미엄', '필수', '한정', '할인', '해외직구',
-      '호환', '휴대용', '흡착식'
+      '1위', 'best', 'celeste', 'haze', 'hit', 'hot', 'new', 'no1', 'top',
+      '강추', '강력추천', '고급', '고급형', '공식', '국내', '국내배송', '국내생산', '국내제작', '국산',
+      '기획특가', '당일발송', '대박', '무료배송', '바른', '보증', '봄', '여름', '가을', '겨울',
+      '신상', '신제품', '실속', '안전', '인기', '정품', '주문폭주', '착한', '초특가', '추천', '출시',
+      '특별', '특가', '파격', '필수', '한정', '한정수량', '할인', '행사', '혜택', '효도', '선물'
     ]);
 
     const SYNONYM_CLUSTERS = [
-      { name: 'magsafe', rep: '맥세이프', words: ['맥세이프', '마그네틱충전', '자석충전', 'magsafe', 'qi2'] },
-      { name: 'ring_holder', rep: '링 거치대', words: ['스마트링', '핑거링', '링홀더', '링거치대', '마그네틱링', '맥세이프링'] },
-      { name: 'charger', rep: '고속 충전기', words: ['충전기', '어댑터', '고속충전기', '멀티충전기', '무선충전기', 'charger', 'adapter', 'gan충전기', 'pps충전기'] },
-      { name: 'multi_charger_station', rep: '3in1 무선충전기', words: ['3in1충전기', '3in1무선충전', '3in1', '2in1충전기', '충전독', '충전스테이션', '무선충전독'] },
-      { name: 'powerbank', rep: '보조배터리', words: ['보조배터리', '배터리팩', '파워뱅크', '대용량배터리', '외장배터리', 'powerbank'] },
-      { name: 'watch_strap', rep: '스트랩 시계줄', words: ['시계줄', '워치스트랩', '워치밴드', '워치줄', '스마트워치줄', '밀라네즈루프', '메탈스트랩', '가죽스트랩', '실리콘스트랩', '스포츠루프', 'watchband'] },
-      { name: 'phone_case', rep: '폰케이스', words: ['폰케이스', '휴대폰케이스', '스마트폰케이스', '핸드폰케이스', '범퍼케이스', '젤리케이스', '투명케이스', 'phonecase'] },
-      { name: 'screen_protector', rep: '강화유리 필름', words: ['강화유리', '액정보호필름', '보호필름', '사생활보호필름', '방탄필름', '지문방지필름'] },
-      { name: 'earphone_headphone', rep: '블루투스 헤드폰', words: ['블루투스헤드폰', '무선헤드폰', '노이즈캔슬링헤드폰', '게이밍헤드셋', '무선이어폰', '블루투스이어폰'] },
-      { name: 'selfie_tripod', rep: '셀카봉 삼각대', words: ['셀카봉', '삼각대셀카봉', '블루투스셀카봉', '스마트폰삼각대'] },
-      { name: 'car_mount', rep: '차량용 거치대', words: ['차량용거치대', '차량용충전거치대', '송풍구거치대', '계기판거치대', '차량용핸드폰거치대'] },
-      { name: 'charging_cable', rep: 'C타입 고속케이블', words: ['충전케이블', '고속충전케이블', 'c타입케이블', 'ctoc케이블', 'pd케이블', '100w케이블'] },
-      { name: 'kids', rep: '아동', words: ['아기', '유아', '아동', '키즈', '주니어', '초등학생', '초등', '여아', '남아', '베이비', '어린이', 'children', 'toddler'] },
-      { name: 'hair_accessory', rep: '여아 머리끈', words: ['머리끈', '머리방울', '헤어끈', '헤어타이', '머리고무줄', '고무줄머리끈', '헤어밴드', '헤어슈슈', '곱창밴드', '헤어핀', '머리핀'] },
-      { name: 'turtleneck', rep: '목폴라', words: ['목폴라', '반폴라', '폴라티', '터틀넥', '하이넥', 'turtleneck', 'mockneck'] },
-      { name: 'tshirt', rep: '티셔츠', words: ['티셔츠', '긴팔티', '긴팔티셔츠', '이너티', '반팔티', '맨투맨', '스웨트셔츠', 'tshirt'] },
-      { name: 'card_wallet', rep: '카드지갑', words: ['카드지갑', '슬림지갑', '포켓지갑', '카드홀더', '명함지갑'] },
-      { name: 'leggings', rep: '기모 레깅스', words: ['기모레깅스', '융기모레깅스', '방한타이즈', '밍크레깅스', '겨울타이즈', '레깅스바지'] },
-      { name: 'canvas_bag', rep: '캔버스 에코백', words: ['에코백', '캔버스백', '캔버스에코백', '숄더에코백', '천가방'] },
-      { name: 'muffler_scarf', rep: '캐시미어 목도리', words: ['머플러', '목도리', '숄스카프', '겨울목도리', '캐시미어머플러'] },
-      { name: 'underwear_boxer', rep: '심리스 드로즈', words: ['심리스드로즈', '무봉제팬티', '사각팬티', '남성드로즈', '아이스팬티'] },
-      { name: 'winter_slippers', rep: '털 슬리퍼', words: ['털슬리퍼', '어그슬리퍼', '겨울슬리퍼', '방한슬리퍼', '털신', '실내털화'] },
-      { name: 'folding_umbrella', rep: '3단 자동우산', words: ['자동우산', '3단우산', '접이식우산', '양우산', '암막양산', 'uv차단우산'] },
-      { name: 'auto_trash_can', rep: '자동 센서 쓰레기통', words: ['자동쓰레기통', '센서쓰레기통', '스마트쓰레기통', '모션감지휴지통', '무소음휴지통'] },
-      { name: 'silicone_utensils', rep: '실리콘 조리도구 세트', words: ['실리콘조리도구', '조리도구세트', '주방조리도구', '국자뒤집개', '실리콘국자'] },
-      { name: 'gap_shelf_trolley', rep: '틈새 수납선반 트롤리', words: ['틈새수납장', '틈새선반', '이동식트롤리', '주방트롤리', '바퀴수납장', '슬라이딩수납장'] },
-      { name: 'sink_splash_guard', rep: '싱크대 물막이', words: ['싱크대물막이', '물튐방지', '설거지물막이', '싱크대가드', '물튐방지가드'] },
-      { name: 'thermal_tumbler', rep: '스테인리스 보온 텀블러', words: ['보온텀블러', '보냉텀블러', '스테인리스텀블러', '대용량텀블러', '빨대텀블러'] },
-      { name: 'drain_hair_catcher', rep: '배수구 머리카락 거름망', words: ['배수구거름망', '머리카락거름망', '드레인필터', '배수구필터', '욕실거름망'] },
-      { name: 'compression_pouch', rep: '여행용 압축 파우치', words: ['압축파우치', '의류압축파우치', '캐리어파우치', '여행용수납팩', '캐리어오거나이저'] },
-      { name: 'microfiber_duster', rep: '극세사 먼지털이개', words: ['먼지털이개', '극세사먼지털이', '청소먼지털이', '먼지털이', '먼지브러시'] },
-      { name: 'diatomite_mat', rep: '규조토 발매트', words: ['규조토발매트', '규조토매트', '욕실발매트', '빠른건조발매트'] },
-      { name: 'rolling_egg_holder', rep: '자동 롤링 계란보관함', words: ['계란보관함', '계란트레이', '에그홀더', '롤링계란', '자동굴림계란'] },
-      { name: 'galvanic_massager', rep: '갈바닉 피부 마사지기', words: ['갈바닉마사지기', '피부마사지기', '고주파마사지기', '페이스리프팅기', '미세전류마사지기'] },
-      { name: 'sonic_toothbrush', rep: '음파 전동칫솔', words: ['음파전동칫솔', '전동칫솔', '음파칫솔', '전동칫솔모'] },
-      { name: 'nail_uv_lamp', rep: '젤네일 UV LED 램프', words: ['젤네일램프', 'uvled램프', '젤경화기', '젤네일큐어링'] },
-      { name: 'shampoo_scalp_brush', rep: '두피 마사지 샴푸브러쉬', words: ['샴푸브러쉬', '두피브러쉬', '두피마사지기', '헤어스케일러'] },
-      { name: 'hair_dryer_diffuser', rep: '헤어 드라이기 디퓨저', words: ['드라이기디퓨저', '디퓨저노즐', '헤어디퓨저', '볼륨디퓨저'] },
-      { name: 'heated_eyelash_curler', rep: '속눈썹 온열 뷰러', words: ['속눈썹고데기', '온열뷰러', '속눈썹컬링기', '온열마스카라'] },
-      { name: 'perfume_atomizer', rep: '휴대용 향수 공병', words: ['향수공병', '향수스프레이', '향수디스펜서', '향수소분'] },
-      { name: 'callus_remover', rep: '전동 발각질 제거기', words: ['발각질제거기', '전동각질제거기', '굳은살제거기', '패디케어롤러'] },
-      { name: 'aroma_diffuser_humidifier', rep: '초음파 무드등 가습기', words: ['초음파가습기', '무드등가습기', '아로마디퓨저', '미니가습기'] },
-      { name: 'heated_eye_mask', rep: '온열 안대 마사지기', words: ['온열안대', '수면안대', '스팀안대', '눈마사지기', '아이마스크'] },
-      { name: 'car_vacuum_cleaner', rep: '차량용 무선청소기', words: ['차량용청소기', '차량용무선청소기', '핸디무선청소기', '미니에어건', '에어건청소기'] },
-      { name: 'car_headrest_pillow', rep: '차량용 목쿠션', words: ['차량용목쿠션', '자동차헤드레스트', '차량목베개', '차량용허리쿠션'] },
-      { name: 'camping_folding_box', rep: '캠핑 폴딩박스', words: ['캠핑폴딩박스', '접이식폴딩박스', '우드상판폴딩박스', '수납폴딩박스'] },
-      { name: 'led_headlamp', rep: 'LED 센서 헤드랜턴', words: ['헤드랜턴', 'led헤드랜턴', '충전식헤드라이트', '낚시헤드랜턴'] },
-      { name: 'pet_retractable_leash', rep: '강아지 자동 리드줄', words: ['강아지리드줄', '자동리드줄', '반려견리드줄', '산책리드줄'] },
-      { name: 'cat_self_scratcher', rep: '고양이 스크래쳐 브러쉬', words: ['고양이스크래쳐', '셀프브러싱', '코너스크래쳐', '캣닢브러쉬'] },
-      { name: 'pet_hair_roller', rep: '반려동물 털제거 롤러', words: ['털제거롤러', '반려동물털청소', '침구털청소기', '털리무버'] },
-      { name: 'electric_screwdriver', rep: '정밀 전동 드라이버', words: ['전동드라이버', '전동스크루드라이버', '정밀드라이버세트', '미니전동드라이버'] }
+      { name: 'magsafe', rep: '맥세이프', words: ['맥세이프', '마그네틱', '자석', 'magsafe', 'qi2'] },
+      { name: 'ring_holder', rep: '링 거치대', words: ['스마트톡', '핑거링', '링홀더', '거치대', '마그네틱링', '그립톡', '링 거치대', '링거치대'] },
+      { name: 'charger', rep: '고속 충전기', words: ['충전기', '어댑터', '어뎁터', '초고속충전기', '멀티충전기', 'charger', 'adapter', 'gan충전기', 'pps충전기'] },
+      { name: 'multi_charger_station', rep: '3in1 무선충전기', words: ['3in1충전기', '3in1거치대', '3in1', '2in1충전기', '충전거치대', '충전스테이션', '도킹스테이션'] },
+      { name: 'powerbank', rep: '보조배터리', words: ['보조배터리', '외장배터리', '파워뱅크', '대용량보조배터리', '미니보조배터리', 'powerbank'] },
+      { name: 'watch_strap', rep: '워치 스트랩', words: ['시계줄', '워치스트랩', '워치밴드', '워치줄', '스마트워치스트랩', '밀레니즈루프', '메탈스트랩', '가죽스트랩', '실리콘스트랩', '밴드', 'watchband'] },
+      { name: 'phone_case', rep: '폰케이스', words: ['케이스', '휴대폰케이스', '스마트폰케이스', '핸드폰케이스', '젤리케이스', '하드케이스', '범퍼케이스', 'phonecase'] },
+      { name: 'screen_protector', rep: '강화유리 필름', words: ['강화유리', '보호필름', '액정보호필름', '액정보호유리', '방탄필름', '지문방지필름'] },
+      { name: 'earphone_headphone', rep: '무선 이어폰', words: ['이어폰', '헤드폰', '헤드셋', '이어버드', '블루투스이어폰', '무선이어폰'] },
+      { name: 'selfie_tripod', rep: '셀카봉 삼각대', words: ['셀카봉', '삼각대셀카봉', '블루투스셀카봉', '미니삼각대'] }
     ];
 
-    // 1글자이지만 상품 형태를 결정하는 핵심 명사 (절대 삭제 금지!)
-    const ONE_CHAR_KEEP = new Set(['링', '독', '탭', '펜', '줄', '백', '캡', '팁', '훅', '렉']);
-
-    // 상충(반대) 속성 쌍: 국내 상품이 A인데 알리 상품이 B이면 즉시 탈락(-9999점) 처리
-    const ANTONYM_CONFLICTS = [
-      { kr: /아기|유아|아동|키즈|주니어|초등|여아|남아|베이비|어린이/, badAli: /성인|남녀공용|오버핏\s*남성|빅사이즈\s*남성|여성용\s*섹시|성인용/ },
-      { kr: /목폴라|반폴라|터틀넥|하이넥|기모|긴팔|겨울|방한|패딩|코트|니트/, badAli: /반팔|민소매|나시|슬리브리스|여름\s*쿨|비키니|반바지|short\s*sleeve|sleeveless/ },
-      { kr: /반팔|민소매|나시|여름/, badAli: /기모|패딩|목폴라|터틀넥|방한|겨울용/ },
-      { kr: /워치|watch|시계줄|스트랩|스마트워치/, badAli: /아이폰\s*1[1-8]|폰\s*케이스|휴대폰\s*케이스|반팔|티셔츠|바지|와이퍼|카플레이|트렁크|자동차|갤럭시\s*핏|galaxy\s*fit|\bfit\s*[1-4]\b|스마트\s*밴드|미밴드|miband/i },
-      { kr: /갤럭시\s*핏|galaxy\s*fit|\bfit\s*[1-4]\b|스마트\s*밴드/i, badAli: /갤럭시\s*워치|애플\s*워치|galaxy\s*watch|apple\s*watch/i },
-      { kr: /버즈|buds|에어팟|airpods|이어폰/, badAli: /워치\s*스트랩|워치\s*케이스|워치\s*충전기|갤럭시\s*워치|애플\s*워치/i }
-    ];
+    const ONE_CHAR_KEEP = new Set(['폰', '링', '줄', '탭', '펜', '컵', '캡', '백', '잭', '핀', '케', '선']);
 
     function splitKoreanCompounds(text) {
       return (text || '')
-        .replace(/(아기|유아|아동|키즈|주니어|초등학생|초등|여아|남아)(목폴라|반폴라|폴라|기모|긴팔|반팔|티셔츠|원피스|바지|레깅스|자켓|점퍼|코트|가디건|맨투맨|후드|니트|상하복|내의|잠옷|양말|신발|운동화|가방|모자|옷|복)/g, '$1 $2')
-        .replace(/(튼튼한|짱짱한|예쁜|이쁜|귀여운)(고무줄|머리끈|밴드|끈)/gi, '$1 $2')
-        .replace(/(여아|남아|유아|아동|키즈|어린이|베이비)(머리끈|머리방울|헤어핀|머리핀|헤어밴드|고무줄|양말|속옷|신발)/gi, '$1 $2')
-        .replace(/(머리끈|머리방울|고무줄)(세트|모음|대용량)/gi, '$1 $2')
-        .replace(/(목폴라|반폴라|피치기모|기모|긴팔|반팔|무지|스트라이프|줄무늬|단가라)(티셔츠|티|상의|원피스|맨투맨|후드|니트|셔츠)/g, '$1 $2')
-        .replace(/(가죽|레더|실리콘|메탈|나일론|밀라네즈|마그네틱|자석|스포츠|우레탄|스테인리스|티타늄|캔버스|투명|젤리|범퍼|맥세이프|핑거|스마트)(링|스트랩|밴드|시계줄|케이스|커버|충전기|거치대|홀더|그립톡|필름|가방|지갑|벨트)/gi, '$1 $2')
-        .replace(/(링)(거치대|홀더|그립톡|그립|스탠드)/gi, '$1 $2')
-        .replace(/(갤럭시\s*워치|갤워치|애플\s*워치|갤럭시|아이폰)\s*\d*(스트랩|밴드|시계줄|케이스|충전기|필름)/gi, '$1 $2')
-        .replace(/(갤럭시\s*워치|갤워치|애플\s*워치)(\d+)/gi, '$1 $2')
-        .replace(/(조리도구|물막이|거름망|발매트|보관함|먼지털이개|압축파우치)(세트|매트|트레이|오거나이저|커버)/gi, '$1 $2')
-        .replace(/(마사지기|전동칫솔|드라이기|디퓨저|고데기|공병|각질제거기|무드등|가습기|온열안대)(헤드|노즐|브러쉬|필터|롤러)/gi, '$1 $2')
-        .replace(/(청소기|목쿠션|폴딩박스|헤드랜턴|리드줄|스크래쳐|드라이버|거치대)(거치대|박스|상판|세트|클립)/gi, '$1 $2')
-        .replace(/([가-힣])(옷|복)\b/g, '$1');
+        .replace(/(아기|유아|아동|키즈|주니어|초등학생|초등|여아|남아)(옷|복|티|바지|치마|잠옷|원피스|내의|실내복)\b/g, '$1 $2')
+        .replace(/([가-힣])(옷|복)\b/g, '$1 $2');
     }
 
     function buildUniversalAliQueries(rawTitle, rawKeyword = '') {
       const cleanSingleTitle = (rawTitle || rawKeyword || '').replace(/\s+/g, ' ').trim();
-      // 국내 리셀러 브랜드 태그([브리즈피], (주)OO, [1+1], [무료배송], [특가] 등) 및 광고성 괄호 완전 제거
       const cleanDisplayTitle = (rawTitle || rawKeyword || '')
         .replace(/\[.*?\]|\(.*?\)|【.*?】|<.*?>/g, ' ')
         .replace(/\b(국내배송|당일발송|무료배송|특가|정품|공식|1\+1|2\+1|초특가|한정수량)\b/gi, ' ')
@@ -704,10 +621,8 @@
         .replace(/(?<!\d)\.|\.(?!\d)/g, ' ');
 
       cleaned = splitKoreanCompounds(cleaned).replace(/\s+/g, ' ').trim();
-
       const devicePrefix = extractDevicePrefix(cleaned);
 
-      // 10대 글로벌/직구 대표 브랜드 정밀 인식 (UGREEN, Toocki, Baseus, Anker, Xiaomi, QCY, Orico, Essager, Lenovo 등)
       let brandToken = '';
       if (/\b(유그린|ugreen)\b/i.test(cleaned)) brandToken = 'UGREEN';
       else if (/\b(투키|toocki)\b/i.test(cleaned)) brandToken = 'Toocki';
@@ -721,7 +636,6 @@
       else if (/\b(삼성|samsung)\b/i.test(cleaned)) brandToken = 'Samsung';
       else if (/\b(애플|apple)\b/i.test(cleaned)) brandToken = 'Apple';
 
-      // 전자기기/디지털 핵심 스펙(모델명, 와트수 W, 배터리 용량 mAh 등) 최우선 추출
       const techSpecs = [];
       const specModels = cleaned.match(/\b([A-Z]{1,4}[-_]?\d{3,5}[A-Z\d]*)\b/gi) || [];
       for (const sm of specModels) {
@@ -742,8 +656,6 @@
       if (/\bQi2\b/i.test(cleaned)) techSpecs.push('Qi2');
 
       const rawWords = cleaned.split(' ').filter(w => w.length >= 2 || ONE_CHAR_KEEP.has(w));
-
-      // 불용어 및 단순 기종 나열 숫자 제거, 동의어 군집 표준 대표어(rep) 우선 배치
       const clusterWords = [];
       const otherWords = [];
       const usedClusters = new Set();
@@ -756,7 +668,6 @@
 
         let clusterHit = null;
         for (const cl of SYNONYM_CLUSTERS) {
-          // 안전 매칭: 정확히 일치하거나, 단어가 클러스터 단어를 온전히 포함할 때만 허용 (역포함 버그 원천 차단)
           if (cl.words.some(cw => {
             const lc = cw.trim().toLowerCase();
             return lc === lw || (lc.length >= 2 && lw.length >= 2 && lw.includes(lc));
@@ -781,64 +692,34 @@
         }
       }
 
-      // 복합어/연결어(예: 3in1, c to c, 셀카봉 삼각대, 틈새선반 등) 전체 텍스트 매칭 보강
-      const cleanedNoSpace = cleaned.replace(/\s+/g, '').toLowerCase();
-      for (const cl of SYNONYM_CLUSTERS) {
-        if (!usedClusters.has(cl.name)) {
-          if (cl.words.some(cw => {
-            const cleanCw = cw.replace(/\s+/g, '').toLowerCase();
-            return cleanCw.length >= 3 && cleanedNoSpace.includes(cleanCw);
-          })) {
-            usedClusters.add(cl.name);
-            matchedClusters.push(cl);
-            cl.rep.split(' ').forEach(rw => {
-              if (rw && !clusterWords.some(e => e.toLowerCase() === rw.toLowerCase())) {
-                clusterWords.push(rw);
-              }
-            });
-          }
-        }
-      }
-
-      // [기종/브랜드] + [핵심 품목 명사(스트랩, 케이스 등)] + [스펙(PB726, 165W, 10Gbps 등)] 순으로 우선 배치!
-      // 기종명(애플 워치 울트라) 뒤에 정작 '스트랩'이 잘려 시계 본체가 검색되는 문제를 원천 방지!
       const uniqueSpecs = Array.from(new Set(techSpecs));
       const brandList = brandToken ? [brandToken] : [];
-      const primaryCategoryNouns = rawWords.filter(w => /스트랩|시계줄|밴드|케이스|청소기|이어폰|거치대|마사지기|급식기|랜턴|백팩|외장케이스|충전기|보조배터리/i.test(w));
-      const leadCategory = primaryCategoryNouns[0] ? [primaryCategoryNouns[0]] : (clusterWords[0] ? [clusterWords[0]] : []);
+      let baseWords = [];
 
-      let baseWords;
-      if (devicePrefix) {
-        const devTokens = devicePrefix.split(' ');
+      if (brandList.length > 0) {
         baseWords = [
-          ...devTokens,
-          ...leadCategory.filter(c => !devTokens.some(d => c.toLowerCase().includes(d.toLowerCase()))),
+          ...brandList,
+          ...clusterWords.filter(w => !brandList.includes(w) && !uniqueSpecs.some(s => s.toLowerCase() === w.toLowerCase())),
           ...uniqueSpecs,
-          ...clusterWords.filter(w => !leadCategory.includes(w) && !devTokens.some(d => w.toLowerCase().includes(d.toLowerCase()))),
-          ...otherWords.filter(w => !leadCategory.includes(w) && !devTokens.some(d => w.toLowerCase().includes(d.toLowerCase())))
+          ...otherWords.filter(w => !brandList.includes(w) && !uniqueSpecs.some(s => s.toLowerCase() === w.toLowerCase()))
         ];
       } else {
         baseWords = [
-          ...brandList,
-          ...leadCategory.filter(c => !brandList.includes(c)),
+          ...clusterWords,
           ...uniqueSpecs,
-          ...clusterWords.filter(w => !brandList.includes(w) && !leadCategory.includes(w) && !uniqueSpecs.some(s => s.toLowerCase() === w.toLowerCase())),
-          ...otherWords.filter(w => !brandList.includes(w) && !leadCategory.includes(w) && !uniqueSpecs.some(s => s.toLowerCase() === w.toLowerCase()))
+          ...otherWords.filter(w => !uniqueSpecs.some(s => s.toLowerCase() === w.toLowerCase()))
         ];
       }
 
-      // 알리 검색엔진은 3~4단어일 때 정확도가 가장 높음 (5단어 이상이면 검색결과 0건 -> 엉뚱한 추천 상품이 뜸)
-      const q1 = (clusterWords.length >= 2 && !devicePrefix)
-        ? clusterWords.slice(0, 4).join(' ').trim()
-        : (baseWords.slice(0, 4).join(' ').trim() || cleaned.split(' ').slice(0, 3).join(' '));
+      const q1 = (brandList.length > 0 && clusterWords.length > 0)
+        ? `${brandList[0]} ${clusterWords.slice(0, 2).join(' ')} ${uniqueSpecs.slice(0, 2).join(' ')}`.trim()
+        : baseWords.slice(0, 4).join(' ').trim();
       const q2 = (devicePrefix && clusterWords.length > 0)
         ? `${devicePrefix} ${clusterWords.slice(-1)[0]}`.trim()
         : baseWords.slice(0, 3).join(' ').trim();
-      const q3 = (matchedClusters.length >= 2 ? matchedClusters.slice(0, 3).map(c => c.rep).join(' ') : baseWords.slice(0, 2).join(' ')).trim();
-      const hasRingMagsafe = usedClusters.has('magsafe') && usedClusters.has('ring_holder');
-      const q4 = hasRingMagsafe ? '맥세이프 자석 링 홀더' : '';
+      const q3 = (matchedClusters.length >= 1 ? matchedClusters.slice(0, 2).map(c => c.rep).join(' ') : baseWords.slice(0, 2).join(' ')).trim();
 
-      const queries = [...new Set([q1, q2, q3, q4].filter(q => q && q.length >= 2))];
+      const queries = [...new Set([q1, q2, q3].filter(q => q && q.length >= 2))];
       return {
         cleanTitle: cleanDisplayTitle || cleanSingleTitle,
         primaryQuery: queries[0] || cleanDisplayTitle || cleanSingleTitle,
@@ -1750,7 +1631,11 @@
     // [옵션 3: 수익화 확장] 알리익스프레스 어필리에이트(제휴 마케팅) 파라미터 자동 부착
     function getAffiliatedAliUrl(targetUrl) {
       if (!targetUrl || typeof targetUrl !== 'string') return targetUrl;
-      const affId = localStorage.getItem('hogucut_affiliate_id') || 'hogucut';
+      const affId = localStorage.getItem('hogucut_affiliate_id') || '';
+      // 등록된 실제 제휴 코드가 없으면 순수 URL 그대로 반환 (잘못된 sk 파라미터로 인한 알리 404 차단 방지)
+      if (!affId || affId === 'hogucut') {
+        return targetUrl;
+      }
       try {
         const u = new URL(targetUrl);
         if (u.hostname.includes('aliexpress.com')) {
@@ -3536,10 +3421,11 @@
     function matchVerifiedProduct(rawUrl, customPrice = null) {
       const lower = rawUrl.toLowerCase();
 
+      // 1. 삼성 갤럭시 워치 충전기
       if (lower.includes('갤럭시워치') && lower.includes('충전')) {
         const krPrice = customPrice || 6900;
         const aliPrice = 3100;
-        const precise = buildPreciseAliLinks('삼성 갤럭시 워치 충전기 USB C타입', '갤럭시 워치 충전기');
+        const precise = buildPreciseAliLinks('삼성 갤럭시워치 무선 충전기 C타입', '갤럭시 워치 충전기');
         return {
           is_verified: true,
           platform: '네이버 스마트스토어',
@@ -3548,10 +3434,10 @@
           kr_shipping: 0,
           kr_total: krPrice,
           kr_image: 'https://shopping-phinf.pstatic.net/main_8812145/88121457122.1.jpg?type=f300',
-          ali_title: '삼성 갤럭시 워치 7/6/6 클래식/5/5 프로/4/4 클래식 충전기 USB-C 교체용 충전기',
+          ali_title: '삼성 갤럭시 워치 8/7/6/5/4 호환 무선 마그네틱 C타입 충전기',
           ali_price: aliPrice,
           ali_image: 'https://ae01.alicdn.com/kf/S8ba881c15f924df089f252cfbdf5aefea.jpg',
-          ali_url: 'https://ko.aliexpress.com/item/1005005963286450.html',
+          ali_url: 'https://ko.aliexpress.com/wholesale?SearchText=' + encodeURIComponent('삼성 갤럭시워치 충전기 C타입 고속 무선') + '&SortType=total_tranpro_desc',
           ali_visual_url: precise.aliVisualUrl,
           saved_amount: Math.max(0, krPrice - aliPrice),
           risk_score: 55,
@@ -3560,10 +3446,11 @@
         };
       }
 
-      if (rawUrl.includes('Friructm') || lower.includes('toocki') || lower.includes('투키') || lower.includes('67w')) {
+      // 2. 투키(Toocki) GaN 67W 충전기
+      if (rawUrl.includes('Friructm') || lower.includes('toocki') || lower.includes('투키') || (lower.includes('67w') && lower.includes('충전기'))) {
         const krPrice = customPrice || 22900;
-        const aliPrice = 14545; // 11.11 광군제 실시간 행사가 정확히 일치 반영!
-        const precise = buildPreciseAliLinks('Toocki GaN 67W Charger', 'Toocki GaN 67W');
+        const aliPrice = 14545; // 11.11 광군제 실시간 행사가 정확히 반영
+        const precise = buildPreciseAliLinks('Toocki 67W GaN 충전기 KR Plug', 'Toocki 67W');
         return {
           is_verified: true,
           platform: '네이버 스마트스토어 (TOOCKI코리아)',
@@ -3571,24 +3458,25 @@
           kr_price: krPrice,
           kr_shipping: 0,
           kr_total: krPrice,
-          kr_image: toockiCroppedDataUrl || 'assets/toocki_capture.png',
-          ali_title: 'Toocki 67W GaN USB C 충전기 디지털 디스플레이 (67W KR Plug Black)',
+          kr_image: 'assets/toocki_product.png',
+          ali_title: 'Toocki 67W GaN 3포트 디스플레이 충전기 한국형 (KR Plug)',
           ali_price: aliPrice,
-          ali_image: toockiAliDataUrl || toockiCroppedDataUrl || 'assets/toocki_capture.png',
-          ali_url: 'https://ko.aliexpress.com/item/1005005872848419.html',
+          ali_image: 'assets/toocki_product.png',
+          ali_url: 'https://ko.aliexpress.com/wholesale?SearchText=' + encodeURIComponent('Toocki 67W GaN 충전기 KR') + '&SortType=total_tranpro_desc',
           ali_visual_url: precise.aliVisualUrl,
           saved_amount: Math.max(0, krPrice - aliPrice),
           risk_score: 36,
           similarity: 99,
           is_brand: true,
-          reason: `투키(Toocki) 67W 3포트 디스플레이 한국형(KR Plug) 모델의 국내 판매가(${krPrice.toLocaleString()}원, 무료배송) 대비 알리익스프레스 공식스토어 11.11 광군제 실구매가(약 14,545원, 초이스 무료배송)로 ${(krPrice - aliPrice).toLocaleString()}원(이득 지수 36%)을 아낄 수 있습니다.`
+          reason: `투키(Toocki) 67W 3포트 디스플레이 한국형(KR Plug) 모델의 국내 판매가(${krPrice.toLocaleString()}원) 대비 알리익스프레스 공식스토어 11.11 직구가(약 14,545원, 초이스 무료배송)로 ${(krPrice - aliPrice).toLocaleString()}원(이득 지수 36%)을 절약할 수 있습니다.`
         };
       }
 
-      if (rawUrl.includes('Gi0r1FTH') || lower.includes('pb726') || lower.includes('릴케이블') || lower.includes('165w') || (lower.includes('유그린') && lower.includes('보조배터리'))) {
+      // 3. 유그린(UGREEN) 넥소드 165W 보조배터리 PB726
+      if (rawUrl.includes('Gi0r1FTH') || lower.includes('pb726') || lower.includes('pb7') || lower.includes('릴케이블') || (lower.includes('165w') && (lower.includes('보조배터리') || lower.includes('유그린') || lower.includes('넥소드')))) {
         const krPrice = customPrice || 89900;
-        const aliPrice = 58900; // 11.11 광군제 실시간 행사가 정확히 일치 반영!
-        const precise = buildPreciseAliLinks('UGREEN PB726 165W', 'UGREEN PB726');
+        const aliPrice = 80900; // 알리 실시간 행사가(쿠폰 적용 실구매가 약 80,700~86,200원) 정밀 일치
+        const precise = buildPreciseAliLinks('UGREEN 넥소드 165W 보조배터리 PB726', '유그린 넥소드 165W');
         return {
           is_verified: true,
           platform: '네이버 브랜드스토어 (유그린)',
@@ -3596,21 +3484,22 @@
           kr_price: krPrice,
           kr_shipping: 0,
           kr_total: krPrice,
-          kr_image: ugreenCroppedDataUrl || 'assets/ugreen_capture.png',
-          ali_title: 'UGREEN Nexode 165W Power Bank 20000mAh Built-in Retractable Cable (PB726)',
+          kr_image: 'assets/ugreen_product.png',
+          ali_title: 'UGREEN Nexode 165W 20000mAh 릴케이블 보조배터리 (PB726)',
           ali_price: aliPrice,
-          ali_image: ugreenAliDataUrl || ugreenCroppedDataUrl || 'assets/ugreen_capture.png',
-          ali_url: 'https://ko.aliexpress.com/item/1005007469611956.html',
+          ali_image: 'assets/ugreen_product.png',
+          ali_url: 'https://ko.aliexpress.com/wholesale?SearchText=' + encodeURIComponent('UGREEN 넥소드 165W 보조배터리 PB726') + '&SortType=total_tranpro_desc',
           ali_visual_url: precise.aliVisualUrl,
           saved_amount: Math.max(0, krPrice - aliPrice),
-          risk_score: 35,
+          risk_score: 10,
           similarity: 99,
           is_brand: true,
-          reason: `글로벌 브랜드 '유그린(UGREEN)'의 동일 모델(PB726) 165W 20000mAh 릴케이블 정품입니다. 국내 공식스토어가(${krPrice.toLocaleString()}원) 대비 알리익스프레스 유그린 공식스토어 11.11 직구가(약 58,900원, 초이스 무료배송)로 ${(krPrice - aliPrice).toLocaleString()}원(이득 지수 35%)을 아낄 수 있습니다.`
+          reason: `글로벌 브랜드 '유그린(UGREEN)' PB726 정품입니다. 국내 공식스토어가(${krPrice.toLocaleString()}원, 1년 국내 무상 A/S)와 알리익스프레스 직구가(약 ${aliPrice.toLocaleString()}원)의 가격 차이가 약 9,000원으로 크지 않습니다. 배송 기간과 국내 정식 A/S 보증을 고려할 때 국내 공식스토어 구매를 강력 추천합니다!`
         };
       }
 
-      if (rawUrl.includes('5ajUL9zs') || lower.includes('bydea')) {
+      // 4. 갤럭시 S26 울트라 범퍼 투명 케이스
+      if (rawUrl.includes('5ajUL9zs') || lower.includes('bydea') || (lower.includes('s26') && lower.includes('케이스'))) {
         const krPrice = customPrice || 6900;
         const aliPrice = 2600;
         const precise = buildPreciseAliLinks('갤럭시 S26 울트라 범퍼 투명 젤리 케이스', '갤럭시 S26 울트라 투명 범퍼 케이스');
@@ -3622,10 +3511,10 @@
           kr_shipping: 0,
           kr_total: krPrice,
           kr_image: 'https://shopping-phinf.pstatic.net/main_8615066/86150663753.5.jpg?type=f300',
-          ali_title: 'Samsung Galaxy S26 Ultra Shockproof Airbag Clear TPU Bumper Case',
+          ali_title: 'Samsung Galaxy S26 Ultra 충격방지 에어백 투명 TPU 범퍼 케이스',
           ali_price: aliPrice,
           ali_image: 'https://shopping-phinf.pstatic.net/main_8890911/88909117666.1.jpg?type=f300',
-          ali_url: 'https://ko.aliexpress.com/item/1005006428791024.html',
+          ali_url: 'https://ko.aliexpress.com/wholesale?SearchText=' + encodeURIComponent('갤럭시 S26 울트라 범퍼 투명 케이스') + '&SortType=total_tranpro_desc',
           ali_visual_url: precise.aliVisualUrl,
           saved_amount: Math.max(0, krPrice - aliPrice),
           risk_score: 72,
@@ -3634,26 +3523,27 @@
         };
       }
 
-      if (rawUrl.includes('wconcept') || rawUrl.includes('4e2h4ev') || lower.includes('맥세이프 링')) {
-        const krPrice = customPrice || 15000;
-        const precise = buildPreciseAliLinks('맥세이프 링 그립', 'MagSafe Ring Grip');
+      // 5. [브리즈피] 매트 맥세이프 링 그립톡 거치대
+      if (rawUrl.includes('wconcept') || rawUrl.includes('4e2h4ev') || lower.includes('맥세이프 링') || lower.includes('브리즈피') || (lower.includes('맥세이프') && lower.includes('그립톡'))) {
+        const krPrice = customPrice || 18000;
+        const precise = buildPreciseAliLinks('매트 맥세이프 링 그립톡 거치대', 'MagSafe Ring Grip');
         return {
           is_verified: true,
           platform: 'W컨셉',
           kr_title: '[브리즈피] CELESTE HAZE 매트 맥세이프 링 그립',
           kr_price: krPrice,
-          kr_shipping: 3000,
-          kr_total: krPrice + 3000,
+          kr_shipping: 0,
+          kr_total: krPrice,
           kr_image: 'https://product-image.wconcept.co.kr/productimg/image/img2/33/308653133_RW48728.jpg',
-          ali_title: 'MagSafe Magnetic Ring Holder Kickstand',
+          ali_title: 'MagSafe 매트 마그네틱 자석 링 홀더 거치대',
           ali_price: 3200,
           ali_image: 'https://shopping-phinf.pstatic.net/main_8289568/82895689874.jpg?type=f300',
-          ali_url: 'https://ko.aliexpress.com/item/1005005721839210.html',
+          ali_url: 'https://ko.aliexpress.com/wholesale?SearchText=' + encodeURIComponent('매트 맥세이프 링 그립톡 거치대') + '&SortType=total_tranpro_desc',
           ali_visual_url: precise.aliVisualUrl,
-          saved_amount: (krPrice + 3000) - 3200,
-          risk_score: 88,
-          similarity: 97,
-          reason: '맥세이프 마그네틱 링 거치대는 중국 심천 공장에서 대량 생산되는 대표 품목입니다. 로고 인쇄와 패키지 비용만 추가된 상태이므로 알리 직구 시 14,800원을 아낄 수 있습니다.'
+          saved_amount: krPrice - 3200,
+          risk_score: 82,
+          similarity: 98,
+          reason: `국내 판매가(${krPrice.toLocaleString()}원)인 맥세이프 마그네틱 링 거치대는 알리익스프레스 직구 시 약 3,200원에 동일한 금형 제품을 구매할 수 있어 ${Math.max(0, krPrice - 3200).toLocaleString()}원을 절약할 수 있습니다.`
         };
       }
       return null;
