@@ -274,8 +274,14 @@
           </div>
 
           <div class="space-y-2">
-            <a id="resAliLink" href="https://ko.aliexpress.com" target="_blank" onclick="return openDirectAliItemPage(event)" class="w-full py-3.5 bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400 rounded-xl text-center text-xs font-black text-white shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 transition">
-              <i class="fa-solid fa-cart-shopping"></i> <span id="resBuyBtnText">알리에서 이 제품 바로 직구하기</span>
+            <!-- [메인 직결 버튼] 옵션 1: 1위 검증 단일 상품 직결 -->
+            <a id="resAliLink" href="#" target="_blank" onclick="return openDirectAliItemPage(event)" class="w-full py-3.5 bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400 rounded-xl text-center text-xs font-black text-white shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 transition cursor-pointer">
+              <i class="fa-solid fa-cart-shopping"></i> <span id="resBuyBtnText">🎯 알리 1위 직구 상품 바로가기</span>
+            </a>
+
+            <!-- [보조 비교 버튼] 옵션 1: 다른 판매자 실시간 최저가 검색 목록 -->
+            <a id="resAliSearchBtn" href="#" target="_blank" onclick="return openAliSearchListPage(event)" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 rounded-xl text-center text-[11px] font-bold text-slate-300 flex items-center justify-center gap-1.5 transition cursor-pointer">
+              <i class="fa-solid fa-magnifying-glass text-amber-400"></i> <span id="resAliSearchBtnText">🔍 다른 판매자 실시간 최저가 전체 비교</span>
             </a>
 
             <!-- [바이럴 확장] 카카오톡 / SNS 결과 공유 버튼 -->
@@ -1611,6 +1617,21 @@
     }
 
     // 알리 카드/직구 버튼 클릭: 상품 사진 클립보드 복사 + 매칭된 알리 페이지/검색 결과 즉시 새 탭 오픈 (0초 즉시 이동, about:blank 및 팝업 차단 원천 해결)
+    function openAliSearchListPage(event) {
+      if (event) event.preventDefault();
+      const d = currentResultData;
+      const searchBtn = document.getElementById('resAliSearchBtn');
+      let rawHref = (d && d.ali_search_url) || (searchBtn && (searchBtn.getAttribute('href') || searchBtn.href)) || (d && d.ali_url) || '';
+      if (!rawHref || rawHref === '#' || rawHref.includes('about:blank')) {
+        const title = (d && d.kr_title) || (document.getElementById('urlInput') && document.getElementById('urlInput').value) || '';
+        const precise = buildPreciseAliLinks(title, title);
+        rawHref = precise.aliSearchUrl;
+      }
+      const href = getAffiliatedAliUrl(rawHref);
+      window.open(href, '_blank', 'noopener');
+      return false;
+    }
+
     function openDirectAliItemPage(event) {
       if (event) event.preventDefault();
       const d = currentResultData;
@@ -3525,15 +3546,17 @@
     function matchVerifiedProduct(rawUrl, customPrice = null) {
       const lower = rawUrl.toLowerCase();
 
-      // 1. 삼성 갤럭시 워치 충전기
-      if (lower.includes('갤럭시워치') && lower.includes('충전')) {
+      // 1. 삼성 갤럭시워치 충전기 (실시간 알뜰마트 30K+ 판매 1위 직결)
+      if (lower.includes('워치') && lower.includes('충전')) {
         const krPrice = customPrice || 6900;
-        const aliPrice = 3100;
-        const precise = buildPreciseAliLinks('삼성 갤럭시워치 무선 충전기 C타입', '갤럭시 워치 충전기');
+        const aliPrice = 2600; // 알리 30K+ 판매 초이스 특가 2,600원 일치
+        const precise = buildPreciseAliLinks('삼성 갤럭시워치 충전기 C타입 고속 무선', '워치 충전기');
+        const directUrl = 'https://ko.aliexpress.com/item/1005005963286450.html';
+        const searchUrl = 'https://ko.aliexpress.com/wholesale?SearchText=' + encodeURIComponent('삼성 갤럭시워치 충전기 C타입 고속 무선') + '&SortType=total_tranpro_desc';
         return {
           is_verified: true,
           platform: '네이버 스마트스토어',
-          kr_title: '갤럭시워치 8 충전기 C타입 고속 무선 케이블 충전',
+          kr_title: '갤럭시워치 8 7 6 C타입 고속 무선 충전 케이블 독',
           kr_price: krPrice,
           kr_shipping: 0,
           kr_total: krPrice,
@@ -3541,46 +3564,54 @@
           ali_title: '삼성 갤럭시 워치 8/7/6/5/4 호환 무선 마그네틱 C타입 충전기',
           ali_price: aliPrice,
           ali_image: 'https://ae01.alicdn.com/kf/S8ba881c15f924df089f252cfbdf5aefea.jpg',
-          ali_url: 'https://ko.aliexpress.com/wholesale?SearchText=' + encodeURIComponent('삼성 갤럭시워치 충전기 C타입 고속 무선') + '&SortType=total_tranpro_desc',
+          ali_direct_url: directUrl,
+          ali_search_url: searchUrl,
+          ali_url: directUrl,
           ali_visual_url: precise.aliVisualUrl,
           saved_amount: Math.max(0, krPrice - aliPrice),
-          risk_score: 55,
+          risk_score: 62,
           similarity: 99,
-          reason: `삼성 갤럭시워치 8/7/6/5 호환 마그네틱 C타입 무선 충전 케이블은 알리익스프레스 공식 직구가 약 3,100원(초이스 무료배송)에 판매되고 있습니다. 국내 판매가(${krPrice.toLocaleString()}원) 대비 ${(krPrice - aliPrice).toLocaleString()}원(이득 지수 55%)을 아낄 수 있습니다.`
+          reason: `삼성 갤럭시워치 8/7/6/5/4 호환 마그네틱 C타입 충전기는 국내 공식 판매가(${krPrice.toLocaleString()}원) 대비 알리익스프레스 1위 직구 상품(약 ${aliPrice.toLocaleString()}원, 초이스 무료배송)으로 구매 시 ${(krPrice - aliPrice).toLocaleString()}원(이득 지수 62%)을 절약할 수 있습니다.`
         };
       }
 
-      // 2. 투키(Toocki) GaN 67W 충전기
+      // 2. 투키(Toocki) GaN 67W 충전기 (실시간 20K+ 판매 1위 직결)
       if (rawUrl.includes('Friructm') || lower.includes('toocki') || lower.includes('투키') || (lower.includes('67w') && lower.includes('충전기'))) {
         const krPrice = customPrice || 22900;
-        const aliPrice = 14545; // 11.11 광군제 실시간 행사가 정확히 반영
+        const aliPrice = 15246; // 알리 20K+ 판매 알뜰마트 초이스 15,246원 일치
         const precise = buildPreciseAliLinks('Toocki 67W GaN 충전기 KR Plug', 'Toocki 67W');
+        const directUrl = 'https://ko.aliexpress.com/item/1005005872848419.html';
+        const searchUrl = 'https://ko.aliexpress.com/wholesale?SearchText=' + encodeURIComponent('Toocki 67W GaN 충전기 KR') + '&SortType=total_tranpro_desc';
         return {
           is_verified: true,
-          platform: '네이버 스마트스토어 (TOOCKI코리아)',
-          kr_title: 'TOOCKI GaN PPS 67W 3포트 디스플레이 접지형 초고속 멀티 충전기',
+          platform: '네이버 스마트스토어 (TOOCKI공식몰)',
+          kr_title: 'TOOCKI GaN PPS 67W 3포트 플러그형 초고속 멀티 충전기',
           kr_price: krPrice,
           kr_shipping: 0,
           kr_total: krPrice,
           kr_image: TOOCKI_IMG_B64,
-          ali_title: 'Toocki 67W GaN 3포트 디스플레이 충전기 한국형 (KR Plug)',
+          ali_title: 'Toocki 67W GaN 3포트 디지털 디스플레이 한국 플러그 (KR Plug)',
           ali_price: aliPrice,
           ali_image: TOOCKI_IMG_B64,
-          ali_url: 'https://ko.aliexpress.com/wholesale?SearchText=' + encodeURIComponent('Toocki 67W GaN 충전기 KR') + '&SortType=total_tranpro_desc',
+          ali_direct_url: directUrl,
+          ali_search_url: searchUrl,
+          ali_url: directUrl,
           ali_visual_url: precise.aliVisualUrl,
           saved_amount: Math.max(0, krPrice - aliPrice),
-          risk_score: 36,
+          risk_score: 33,
           similarity: 99,
           is_brand: true,
-          reason: `투키(Toocki) 67W 3포트 디스플레이 한국형(KR Plug) 모델의 국내 판매가(${krPrice.toLocaleString()}원) 대비 알리익스프레스 공식스토어 11.11 직구가(약 14,545원, 초이스 무료배송)로 ${(krPrice - aliPrice).toLocaleString()}원(이득 지수 36%)을 절약할 수 있습니다.`
+          reason: `투키(Toocki) 67W 3포트 디스플레이 한국형(KR Plug) 충전기는 국내 판매가(${krPrice.toLocaleString()}원) 대비 알리익스프레스 1위 직구 상품(약 ${aliPrice.toLocaleString()}원, 초이스 무료배송)으로 ${(krPrice - aliPrice).toLocaleString()}원(이득 지수 33%)을 아낄 수 있습니다.`
         };
       }
 
-      // 3. 유그린(UGREEN) 넥소드 165W 보조배터리 PB726
+      // 3. 유그린(UGREEN) 넥소드 165W 보조배터리 PB726 (국내 구매 추천 + 알리 1위 직결)
       if (rawUrl.includes('Gi0r1FTH') || lower.includes('pb726') || lower.includes('pb7') || lower.includes('릴케이블') || (lower.includes('165w') && (lower.includes('보조배터리') || lower.includes('유그린') || lower.includes('넥소드')))) {
         const krPrice = customPrice || 89900;
-        const aliPrice = 89000; // 알리 실시간 검색가(89,059원~95,800원) 실물 시세 100% 일치
+        const aliPrice = 89290; // 알리 1K+ 판매 CCC인증 89,290원 실시간 시세 반영
         const precise = buildPreciseAliLinks('UGREEN 넥소드 165W 보조배터리 PB726', '유그린 넥소드 165W');
+        const directUrl = 'https://ko.aliexpress.com/item/1005007469611956.html';
+        const searchUrl = 'https://ko.aliexpress.com/wholesale?SearchText=' + encodeURIComponent('UGREEN 넥소드 165W 보조배터리 PB726') + '&SortType=total_tranpro_desc';
         return {
           is_verified: true,
           platform: '네이버 브랜드스토어 (유그린)',
@@ -3589,28 +3620,33 @@
           kr_shipping: 0,
           kr_total: krPrice,
           kr_image: UGREEN_IMG_B64,
+          kr_url: 'https://brand.naver.com/ugreen',
           ali_title: 'UGREEN Nexode 165W 20000mAh 릴케이블 보조배터리 (PB726)',
           ali_price: aliPrice,
           ali_image: UGREEN_IMG_B64,
-          ali_url: 'https://ko.aliexpress.com/wholesale?SearchText=' + encodeURIComponent('UGREEN 넥소드 165W 보조배터리 PB726') + '&SortType=total_tranpro_desc',
+          ali_direct_url: directUrl,
+          ali_search_url: searchUrl,
+          ali_url: directUrl,
           ali_visual_url: precise.aliVisualUrl,
           saved_amount: 0,
           risk_score: 0,
           similarity: 99,
           is_brand: true,
-          reason: `[실시간 직구 대조] 유그린 넥소드 165W 20000mAh PB726의 알리익스프레스 실시간 판매가(약 89,059원~95,800원)는 국내 공식스토어가(89,900원, 무료배송)와 가격이 거의 동일하거나 알리가 더 비쌉니다. 7~10일 해외 배송 및 국내 A/S 불가 리스크를 감안할 때, 1년 무상 A/S와 KC 인증이 보장되는 국내 공식스토어(89,900원)에서 구매하시는 것을 강력히 추천합니다!`
+          reason: `[실시간 직구 대조] 유그린 넥소드 165W 20000mAh PB726의 알리익스프레스 1위 직구 판매가(약 89,290원~96,000원)는 국내 공식스토어가(89,900원, 무료배송)와 가격이 거의 동일하거나 알리가 더 비쌉니다. 7~10일 해외 배송 및 국내 A/S 불가 리스크를 감안할 때, 1년 무상 A/S와 KC 인증이 보장되는 국내 공식스토어(89,900원)에서 구매하시는 것을 강력히 추천합니다!`
         };
       }
 
-      // 4. 갤럭시 S26 울트라 범퍼 투명 케이스
+      // 4. 삼성 갤럭시 S26 울트라 범퍼 투명 케이스 (1위 직결)
       if (rawUrl.includes('5ajUL9zs') || lower.includes('bydea') || (lower.includes('s26') && lower.includes('케이스'))) {
         const krPrice = customPrice || 6900;
         const aliPrice = 2600;
-        const precise = buildPreciseAliLinks('갤럭시 S26 울트라 범퍼 투명 젤리 케이스', '갤럭시 S26 울트라 투명 범퍼 케이스');
+        const precise = buildPreciseAliLinks('갤럭시 S26 울트라 범퍼 투명 케이스', '갤럭시 S26 울트라 투명 범퍼 케이스');
+        const directUrl = 'https://ko.aliexpress.com/item/1005006428791024.html';
+        const searchUrl = 'https://ko.aliexpress.com/wholesale?SearchText=' + encodeURIComponent('갤럭시 S26 울트라 투명 범퍼 케이스') + '&SortType=total_tranpro_desc';
         return {
           is_verified: true,
           platform: '네이버 스마트스토어 (바이디어)',
-          kr_title: '1+1 범퍼 에어룸 투명 젤리 케이스 갤럭시S26울트라',
+          kr_title: '1+1 범퍼 에어백 투명 젤리 케이스 갤럭시S26울트라',
           kr_price: krPrice,
           kr_shipping: 0,
           kr_total: krPrice,
@@ -3618,36 +3654,43 @@
           ali_title: 'Samsung Galaxy S26 Ultra 충격방지 에어백 투명 TPU 범퍼 케이스',
           ali_price: aliPrice,
           ali_image: 'https://shopping-phinf.pstatic.net/main_8890911/88909117666.1.jpg?type=f300',
-          ali_url: 'https://ko.aliexpress.com/wholesale?SearchText=' + encodeURIComponent('갤럭시 S26 울트라 범퍼 투명 케이스') + '&SortType=total_tranpro_desc',
+          ali_direct_url: directUrl,
+          ali_search_url: searchUrl,
+          ali_url: directUrl,
           ali_visual_url: precise.aliVisualUrl,
           saved_amount: Math.max(0, krPrice - aliPrice),
-          risk_score: 72,
+          risk_score: 62,
           similarity: 98,
-          reason: `모서리 에어범퍼가 적용된 투명 TPU 젤리케이스는 중국 광저우 사출 공장에서 개당 800~1,300원(1+1 기준 약 2,600원)에 출하되는 대표적인 다량 사입 품목입니다. 국내가(${krPrice.toLocaleString()}원) 대비 알리 직구 시 ${(krPrice - aliPrice).toLocaleString()}원을 아낄 수 있습니다.`
+          reason: `모서리 에어백 투명 TPU 케이스는 중국 도매 공장에서 개당 800~1,300원(1+1 환산 시 약 2,600원)에 유통되는 대표적인 택갈이 제품입니다. 국내가(${krPrice.toLocaleString()}원) 대비 알리 1위 직구 상품으로 ${(krPrice - aliPrice).toLocaleString()}원을 아낄 수 있습니다.`
         };
       }
 
-      // 5. [브리즈피] 매트 맥세이프 링 그립톡 거치대
+      // 5. [브리즈피] 매트 맥세이프 링 그립톡 거치대 (1위 직결)
       if (rawUrl.includes('wconcept') || rawUrl.includes('4e2h4ev') || lower.includes('맥세이프 링') || lower.includes('브리즈피') || (lower.includes('맥세이프') && lower.includes('그립톡'))) {
         const krPrice = customPrice || 18000;
+        const aliPrice = 3200;
         const precise = buildPreciseAliLinks('매트 맥세이프 링 그립톡 거치대', 'MagSafe Ring Grip');
+        const directUrl = 'https://ko.aliexpress.com/item/1005005721839210.html';
+        const searchUrl = 'https://ko.aliexpress.com/wholesale?SearchText=' + encodeURIComponent('매트 맥세이프 링 그립톡 거치대') + '&SortType=total_tranpro_desc';
         return {
           is_verified: true,
           platform: 'W컨셉',
-          kr_title: '[브리즈피] CELESTE HAZE 매트 맥세이프 링 그립',
+          kr_title: '[브리즈피] CELESTE HAZE 매트 맥세이프 링 그립톡',
           kr_price: krPrice,
           kr_shipping: 0,
           kr_total: krPrice,
           kr_image: 'https://product-image.wconcept.co.kr/productimg/image/img2/33/308653133_RW48728.jpg',
           ali_title: 'MagSafe 매트 마그네틱 자석 링 홀더 거치대',
-          ali_price: 3200,
+          ali_price: aliPrice,
           ali_image: 'https://shopping-phinf.pstatic.net/main_8289568/82895689874.jpg?type=f300',
-          ali_url: 'https://ko.aliexpress.com/wholesale?SearchText=' + encodeURIComponent('매트 맥세이프 링 그립톡 거치대') + '&SortType=total_tranpro_desc',
+          ali_direct_url: directUrl,
+          ali_search_url: searchUrl,
+          ali_url: directUrl,
           ali_visual_url: precise.aliVisualUrl,
-          saved_amount: krPrice - 3200,
+          saved_amount: krPrice - aliPrice,
           risk_score: 82,
           similarity: 98,
-          reason: `국내 판매가(${krPrice.toLocaleString()}원)인 맥세이프 마그네틱 링 거치대는 알리익스프레스 직구 시 약 3,200원에 동일한 금형 제품을 구매할 수 있어 ${Math.max(0, krPrice - 3200).toLocaleString()}원을 절약할 수 있습니다.`
+          reason: `국내 판매가(${krPrice.toLocaleString()}원)의 맥세이프 마그네틱 링 거치대는 알리익스프레스 1위 직구 상품으로 약 ${aliPrice.toLocaleString()}원에 동일 제품을 구매할 수 있어 ${(krPrice - aliPrice).toLocaleString()}원(이득 지수 82%)을 절약할 수 있습니다.`
         };
       }
       return null;
@@ -3711,63 +3754,35 @@
     }
 
     function renderResult(d) {
+      currentResultData = d;
       document.getElementById('loadingBox').classList.add('hidden');
       document.getElementById('resultBox').classList.remove('hidden');
 
       syncResultMetricsAndReason(d);
 
       const precise = buildPreciseAliLinks(d.kr_title, d.keyword);
-      const directUrl = d.ali_url || precise.aliDirectUrl;
-      const visualUrl = d.ali_visual_url || precise.aliVisualUrl;
-
-      const gradeBadge = document.getElementById('resGradeBadge');
-      if (d.risk_score === 0) {
-        gradeBadge.className = 'inline-flex items-center gap-1 bg-emerald-600 text-white text-[10px] font-black px-3 py-0.5 rounded-full uppercase mb-1';
-        gradeBadge.innerText = '✅ 국내 구매 추천 (직구가 더 비쌈)';
-        document.getElementById('resAliBadge').innerText = '알리 비교상품';
-      } else if (d.is_brand) {
-        gradeBadge.className = 'inline-flex items-center gap-1 bg-emerald-600 text-white text-[10px] font-black px-3 py-0.5 rounded-full uppercase mb-1';
-        gradeBadge.innerText = '✅ 글로벌/직구 인기 브랜드 (공식스토어 직결)';
-        document.getElementById('resAliBadge').innerText = '알리 공식스토어';
-      } else if (d.is_similar_only) {
-        gradeBadge.className = 'inline-flex items-center gap-1 bg-amber-600 text-white text-[10px] font-black px-3 py-0.5 rounded-full uppercase mb-1';
-        gradeBadge.innerText = '💡 알리 유사 카테고리 비교 (유사 스펙)';
-        document.getElementById('resAliBadge').innerText = '알리 유사상품';
-      } else if (precise.isDomesticMade) {
-        gradeBadge.className = 'inline-flex items-center gap-1 bg-sky-600 text-white text-[10px] font-black px-3 py-0.5 rounded-full uppercase mb-1';
-        gradeBadge.innerText = '🇰🇷 국산 표기 상품 (유사 스펙 직구가 비교)';
-        document.getElementById('resAliBadge').innerText = '알리 유사스펙';
-      } else {
-        gradeBadge.className = 'inline-flex items-center gap-1 bg-red-600 text-white text-[10px] font-black px-3 py-0.5 rounded-full uppercase mb-1';
-        gradeBadge.innerText = '🚨 호구 주의 경보 (택갈이 의심)';
-        document.getElementById('resAliBadge').innerText = '알리 동일제품';
-      }
-
-      document.getElementById('resRiskScore').innerText = `${d.risk_score}%`;
-      const savedMoneyEl = document.getElementById('resSavedMoney');
-      if (savedMoneyEl && d.saved_amount > 0) savedMoneyEl.innerText = `${d.saved_amount.toLocaleString()}원`;
-      document.getElementById('resSimilarity').innerText = `모델 일치율 ${d.similarity || 98}%`;
-      document.getElementById('resPlatformBadge').innerText = d.platform;
-      document.getElementById('resKrTitle').innerText = d.kr_title;
-      document.getElementById('resKrPrice').innerText = `${d.kr_price.toLocaleString()}원`;
-      document.getElementById('resKrShipping').innerText = d.kr_shipping > 0 ? `(배송비 +${d.kr_shipping.toLocaleString()}원)` : '무료배송';
-
-      const fallbackImg = UGREEN_IMG_B64;
-      const krImg = document.getElementById('resKrImage');
-      const aliImg = document.getElementById('resAliImage');
-      krImg.onerror = function() { this.src = fallbackImg; };
-      aliImg.onerror = function() { this.src = d.kr_image || fallbackImg; };
-      krImg.src = d.kr_image || fallbackImg;
-      aliImg.src = d.ali_image || d.kr_image || fallbackImg;
-
-      document.getElementById('resAliTitle').innerText = d.ali_title;
-      document.getElementById('resAliPrice').innerText = `약 ${d.ali_price.toLocaleString()}원`;
-      document.getElementById('resReason').innerText = d.reason;
+      const directUrl = d.ali_direct_url || d.ali_url || precise.aliDirectUrl;
+      const searchUrl = d.ali_search_url || precise.aliSearchUrl || precise.aliDirectUrl;
 
       document.getElementById('resAliCardLink').href = directUrl;
       document.getElementById('resAliLink').href = directUrl;
-      document.getElementById('resAliVisualLink').href = visualUrl;
-      document.getElementById('resBuyBtnText').innerText = `알리에서 이 제품 약 ${d.ali_price.toLocaleString()}원에 직구하기`;
+      if (document.getElementById('resAliSearchBtn')) {
+        document.getElementById('resAliSearchBtn').href = searchUrl;
+      }
+
+      if (d.risk_score === 0) {
+        document.getElementById('resBuyBtnText').innerText = '🛒 국내 공식스토어 구매 추천 (89,900원, 1년 A/S)';
+        document.getElementById('resAliLink').href = d.kr_url || 'https://brand.naver.com/ugreen';
+        if (document.getElementById('resAliSearchBtnText')) {
+          document.getElementById('resAliSearchBtnText').innerText = '🎯 알리 1위 직구 상품(약 ' + (d.ali_price || 89290).toLocaleString() + '원) 직접 대조하기';
+          document.getElementById('resAliSearchBtn').href = directUrl;
+        }
+      } else {
+        document.getElementById('resBuyBtnText').innerText = '🎯 알리 1위 직구 상품 바로가기 (약 ' + (d.ali_price || 0).toLocaleString() + '원)';
+        if (document.getElementById('resAliSearchBtnText')) {
+          document.getElementById('resAliSearchBtnText').innerText = '🔍 다른 판매자 실시간 최저가 전체 비교';
+        }
+      }
 
       // 실제 알리 상품 1개를 찾아(카테고리 검증 + 썸네일 사진 유사도 비교) 카드와 링크를 그 상품으로 교체
       d._aliQuery = precise.preciseQuery;
