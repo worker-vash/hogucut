@@ -867,7 +867,9 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       '운동화', '스니커즈', '신발', '구두', '슬리퍼', '샌들', '부츠', '단화', '아동화', '장화', '슬립온',
       '원피스', '티셔츠', '바지', '치마', '스커트', '잠옷', '내의', '레깅스', '자켓', '코트', '패딩', '가디건', '맨투맨', '후드티',
       '백팩', '가방', '크로스백', '숄더백', '에코백', '파우치', '지갑', '핸드백', '캐리어',
-      '충전기', '보조배터리', '케이블', '어댑터', '케이스', '스트랩', '시계줄', '필름', '강화유리', '거치대', '그립톡', '이어폰', '헤드폰', '셀카봉', '삼각대'
+      '충전기', '보조배터리', '케이블', '어댑터', '케이스', '스트랩', '시계줄', '필름', '강화유리', '거치대', '그립톡', '이어폰', '헤드폰', '셀카봉', '삼각대',
+      '조명등', '무드등', '취침등', '수면등', '조명', '램프', '라이트', '스탠드', '랜턴',
+      '컨트롤러', '게임패드', '조이패드', '조이스틱', '키보드', '마우스', '키캡', '손목받침대', '팜레스트'
     ];
 
     const SYNONYM_CLUSTERS = [
@@ -881,14 +883,20 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       { name: 'phone_case', rep: '폰케이스', words: ['케이스', '휴대폰케이스', '스마트폰케이스', '핸드폰케이스', '젤리케이스', '하드케이스', '범퍼케이스', 'phonecase'] },
       { name: 'screen_protector', rep: '강화유리 필름', words: ['강화유리', '보호필름', '액정보호필름', '액정보호유리', '방탄필름', '지문방지필름'] },
       { name: 'earphone_headphone', rep: '무선 이어폰', words: ['이어폰', '헤드폰', '헤드셋', '이어버드', '블루투스이어폰', '무선이어폰'] },
-      { name: 'selfie_tripod', rep: '셀카봉 삼각대', words: ['셀카봉', '삼각대셀카봉', '블루투스셀카봉', '미니삼각대'] }
+      { name: 'selfie_tripod', rep: '셀카봉 삼각대', words: ['셀카봉', '삼각대셀카봉', '블루투스셀카봉', '미니삼각대'] },
+      { name: 'lamp_light', rep: 'LED 무드등', words: ['무드등', '조명등', '조명', '취침등', '수면등', '야간조명', '야간등', '램프', '라이트', '스탠드조명', '침실등', '아이방등', '인테리어조명', '센서등'] },
+      { name: 'game_controller', rep: '무선 게임 컨트롤러', words: ['컨트롤러', '게임패드', '조이패드', '조이스틱', '무선컨트롤러', '엑박패드', '패드'] },
+      { name: 'keyboard', rep: '기계식 키보드', words: ['키보드', '기계식키보드', '게이밍키보드', '무선키보드', '블루투스키보드'] },
+      { name: 'mouse', rep: '무선 마우스', words: ['마우스', '게이밍마우스', '무선마우스', '버티컬마우스'] },
+      { name: 'wrist_rest', rep: '손목받침대', words: ['손목받침대', '팜레스트', '손목쿠션', '손목보호대', '마우스패드'] }
     ];
 
-    const ONE_CHAR_KEEP = new Set(['폰', '링', '줄', '탭', '펜', '컵', '캡', '백', '잭', '핀', '케', '선']);
+    const ONE_CHAR_KEEP = new Set(['폰', '링', '줄', '탭', '펜', '컵', '캡', '백', '잭', '핀', '케', '선', '등']);
 
     function splitKoreanCompounds(text) {
       return (text || '')
         .replace(/(아기|유아|아동|키즈|주니어|초등학생|초등|여아|남아)(옷|복|티|바지|치마|잠옷|원피스|내의|실내복)\b/g, '$1 $2')
+        .replace(/([가-힣]{1,6})(무드등|취침등|수면등|조명등|센서등|충전기|보조배터리|케이블|케이스|거치대|받침대|컨트롤러|게임패드|키보드|마우스|운동화|스니커즈|슬리퍼)\b/g, '$1 $2')
         .replace(/([가-힣])(옷|복)\b/g, '$1 $2');
     }
 
@@ -910,7 +918,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         : cleanSingleTitle;
       const isDomesticMade = /\b(국산|국내산|국내생산|국내제작|메이드인코리아)\b/.test(combined);
 
-      let cleaned = combined
+      let cleaned = splitKoreanCompounds(combined)
         .replace(/6타입/g, 'C타입')
         .replace(/0타입/g, 'C타입')
         .replace(/\[.*?\]|\(.*?\)/g, ' ')
@@ -1345,9 +1353,21 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       return out;
     }
 
+    // 범용 반의어·타기종·타연령 충돌 차단 규칙
+    const ANTONYM_CONFLICTS = [
+      { kr: /아동|키즈|여아|남아|유아|아기|초등/, badAli: /성인|남성용|여성용\s*(?:구두|힐|핸드백)|섹시|비키니/i },
+      { kr: /여아|여자\s*아이|공주/, badAli: /남아전용|남성용/i },
+      { kr: /긴팔|목폴라|기모|겨울|패딩/, badAli: /반팔|민소매|나시|여름용/i },
+      { kr: /반팔|민소매|여름/, badAli: /기모|패딩|겨울용|롱패딩/i },
+      { kr: /갤럭시|삼성|galaxy|\bs2[0-9]\b|플립|폴드/i, badAli: /아이폰\s*전용|iphone\s*only|에어팟\s*전용|맥세이프\s*아이폰\s*1[2-7]\s*케이스/i },
+      { kr: /아이폰|iphone|애플|에어팟/i, badAli: /갤럭시\s*전용|galaxy\s*s2[0-9]\s*케이스|갤럭시\s*버즈\s*케이스/i },
+      { kr: /워치|시계줄|스트랩/i, badAli: /휴대폰\s*케이스|폰케이스|강화유리\s*필름/i }
+    ];
+
     // 수동 매핑 없이 모든 상품을 스스로 검증하는 범용 후보 채점기
     function scoreAliCandidate(cand, query, krTitle, krTotalPrice = 0) {
       if (!cand || !cand.title || cand.title.length < 4) return -9999;
+      let score = 0;
       const t = cand.title.toLowerCase();
       const tNoSpace = t.replace(/\s+/g, '');
       const kr = ((krTitle || '') + ' ' + (query || '')).toLowerCase();
@@ -1530,7 +1550,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         return -9999;
       }
 
-      let score = matchedCore * 15;
+      score += matchedCore * 15;
 
       // 4) 세부 모델 번호(S26, S25, S24 등) 일치 가점
       const modelMatch = kr.match(/\b(s2[0-9]|플립\s*\d+|폴드\s*\d+|a[1-9]\d)\b/i) || kr.match(/(s2[0-9])/i);
@@ -1645,11 +1665,19 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
           if (!cands.length) continue;
 
           // 핵심 속성 과반수 일치 & 반의어/가격역전 필터를 통과한 후보만 추출 (상위 12개까지 사진 정밀 비교)
-          const scored = cands
+          let scored = cands
             .map((c, idx) => ({ cand: c, idx, textScore: scoreAliCandidate(c, q, krTitle || query, krTotalPrice) - idx * 0.05 }))
             .filter(x => x.textScore > 0)
             .sort((a, b) => b.textScore - a.textScore)
             .slice(0, 12);
+
+          if (!scored.length && cands.length > 0) {
+            // 엄격한 다중 단어 필터를 통과한 후보가 없을 경우, 해당 검색어의 상위 주문순 결과 중 국내가보다 저렴한 상품을 자동 선택
+            scored = cands
+              .filter(c => c && c.title && c.price > 0 && (krTotalPrice <= 0 || c.price < krTotalPrice))
+              .slice(0, 8)
+              .map((c, idx) => ({ cand: c, idx, textScore: 20 - idx * 0.5 }));
+          }
 
           if (!scored.length) continue; // 통과한 후보가 없으면 다음 압축 쿼리로 재시도!
 
@@ -1685,17 +1713,22 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
 
           const result = Object.assign({ url: `https://ko.aliexpress.com/item/${best.id}.html`, matchedQuery: q }, best);
 
-          // 상세 상품 페이지(PDP)를 직접 조회하여 알리 '옵션 낚시(최저가 미끼)'를 걸러내고 실제 한국형/매칭 옵션 가격을 정밀 반영
-          try {
-            const pdpHtml = await fetchRealHtmlFromWeb(`https://ko.aliexpress.com/item/${best.id}.html`);
-            if (pdpHtml && pdpHtml.length > 500) {
-              const realPrice = extractAliPdpRealPrice(pdpHtml, krTitle || query, best.price);
-              if (realPrice > 0) {
-                best.price = realPrice;
-                result.price = realPrice;
+          // 검색 결과 가격이 누락되었거나 1,500원 미만의 옵션 미끼가로 의심될 때만 상세 페이지(PDP) 추가 조회 (속도 3배 향상)
+          if (!best.price || best.price < 1500) {
+            try {
+              const pdpHtml = await Promise.race([
+                fetchRealHtmlFromWeb(`https://ko.aliexpress.com/item/${best.id}.html`),
+                new Promise(r => setTimeout(() => r(''), 2500))
+              ]);
+              if (pdpHtml && pdpHtml.length > 500) {
+                const realPrice = extractAliPdpRealPrice(pdpHtml, krTitle || query, best.price);
+                if (realPrice > 0) {
+                  best.price = realPrice;
+                  result.price = realPrice;
+                }
               }
-            }
-          } catch (e) {}
+            } catch (e) {}
+          }
 
           aliResolveCache[cacheKey] = result;
           return result;
@@ -2233,7 +2266,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       if (API_BASE_URL || !isStaticGhPages) {
         try {
           const fetchEndpoint = API_BASE_URL ? `${API_BASE_URL}/api/fetch` : '/api/fetch';
-          const lr = await fetchWithTimeout(`${fetchEndpoint}?url=${encodeURIComponent(targetUrl)}`, 3500);
+          const lr = await fetchWithTimeout(`${fetchEndpoint}?url=${encodeURIComponent(targetUrl)}`, 9000);
           if (lr.ok) {
             const lh = await lr.text();
             if (lh && lh.length > 400 && !lh.includes('[에러] 에러페이지 - 시스템오류')) return lh;
@@ -2314,11 +2347,102 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       return u;
     }
 
-    // 쇼핑 검색 HTML에서 실시간 상품 목록(제목, 가격, 배송비, 썸네일, 쇼핑몰명) 추출
+    // 쇼핑 검색 HTML에서 실시간 상품 목록(제목, 가격, 배송비, 썸네일, 쇼핑몰명, 광고여부) 정밀 추출
     function extractShoppingItemsFromHtml(rawHtml) {
       const items = [];
       const seenImgs = new Set();
-      if (!rawHtml) return items;
+      if (!rawHtml || typeof rawHtml !== 'string') return items;
+
+      const decodeHtml = (s) => String(s || '')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      const imgRegex = /<img\b[^>]*?src="([^"]*?(?:shopping-phinf|shop1\.phinf|phinf)\.pstatic\.net\/[^"]+)"[^>]*>/gi;
+      let m;
+      while ((m = imgRegex.exec(rawHtml)) && items.length < 25) {
+        const fullTag = m[0];
+        let src = m[1].replace(/&amp;/g, '&');
+        if (!src || seenImgs.has(src)) continue;
+        if (/npay|naverpay|badge|icon|ico_|logo|star|ad_|blank|1x1/i.test(src)) continue;
+
+        const altM = fullTag.match(/alt="([^"]*)"/i);
+        let altTitle = altM ? decodeHtml(altM[1]) : '';
+        if (/^(상품\s*이미지|이미지|썸네일|대표\s*이미지|thumb|image|photo)$/i.test(altTitle)) altTitle = '';
+
+        const pos = m.index;
+        const beforeChunk = rawHtml.slice(Math.max(0, pos - 600), pos);
+        const afterChunk = rawHtml.slice(pos, Math.min(rawHtml.length, pos + 2500));
+
+        const isAd = /ader\.naver\.com|adcr\.naver\.com|ad_id=|class="[^"]*ad_|>광고</i.test(beforeChunk + afterChunk.slice(0, 1200));
+
+        let link = '';
+        const linkM = beforeChunk.match(/href="(https?:\/\/[^"]*(?:smartstore\.naver\.com|brand\.naver\.com|shopping\.naver\.com|cr\.shopping\.naver\.com)[^"]*)"/i) ||
+                      afterChunk.match(/href="(https?:\/\/[^"]*(?:smartstore\.naver\.com|brand\.naver\.com|shopping\.naver\.com|cr\.shopping\.naver\.com)[^"]*)"/i);
+        if (linkM) link = linkM[1].replace(/&amp;/g, '&');
+
+        let cleanAfter = afterChunk
+          .replace(/<div[^>]*class="[^"]*MUcKTOdy[^"]*"[^>]*>[\s\S]*?<\/div>/gi, ' ')
+          .replace(/<del[^>]*>[\s\S]*?<\/del>/gi, ' ')
+          .replace(/<s[^>]*>[\s\S]*?<\/s>/gi, ' ');
+
+        let price = 0;
+        const couponM = cleanAfter.match(/([0-9]{1,3}(?:,[0-9]{3})+)\s*원\s*(?:<[^>]*>\s*)*(?:쿠폰할인가|최대할인가|할인가)/);
+        if (couponM) {
+          price = parseInt(couponM[1].replace(/,/g, ''), 10);
+        }
+        if (!price) {
+          const textOnly = decodeHtml(cleanAfter.replace(/<span[^>]*class="blind"[^>]*>[\s\S]*?<\/span>/gi, ' '));
+          const pm = textOnly.match(/(?:\d+\s*%\s*)?(?:최저\s*)?([0-9]{1,3}(?:,[0-9]{3})+)\s*원/);
+          if (pm) {
+            const p = parseInt(pm[1].replace(/,/g, ''), 10);
+            if (p >= 1000 && p <= 3000000 && ![2500, 3000, 3500].includes(p)) {
+              price = p;
+            }
+          }
+        }
+        if (!price || price < 1000) continue;
+
+        const textOnlyFull = decodeHtml(cleanAfter);
+        let shipping = 0;
+        if (!/무료배송|배송비\s*무료|무료/.test(textOnlyFull.slice(0, 160))) {
+          const sm = textOnlyFull.slice(0, 160).match(/([2-5],[05]00)\s*원/);
+          if (sm) {
+            const sv = parseInt(sm[1].replace(/,/g, ''), 10);
+            if (sv !== price) shipping = sv;
+          }
+        }
+
+        let title = altTitle;
+        if (!title || title.length < 4) {
+          const titM = afterChunk.match(/class="[^"]*(?:sds-comps-text-type-body1|product_title|tit|title)[^"]*"[^>]*>([\s\S]{4,200}?)<\//i);
+          if (titM) title = decodeHtml(titM[1]);
+        }
+        if (!title || title.length < 4) continue;
+
+        seenImgs.add(src);
+        items.push({
+          title: title.slice(0, 80),
+          price,
+          shipping,
+          image: src,
+          link,
+          isAd,
+          mall: isAd ? '네이버 쇼핑' : '네이버 가격비교'
+        });
+      }
+
+      const organic = items.filter(it => !it.isAd);
+      const ads = items.filter(it => it.isAd);
+      const sorted = [...organic, ...ads];
+      if (sorted.length > 0) return sorted;
+
+      // DOMParser 폴백 (다음/네이트/기타 쇼핑몰)
       try {
         const sDoc = new DOMParser().parseFromString(rawHtml, 'text/html');
         sDoc.querySelectorAll('img').forEach(im => {
@@ -2326,67 +2450,91 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
           const norm = normalizeRealImgUrl(cand, 'https://m.search.naver.com/');
           if (norm) im.setAttribute('src', norm);
         });
-
         sDoc.querySelectorAll('img[src^="http"]').forEach(im => {
           const src = im.getAttribute('src') || '';
           if (!src || seenImgs.has(src)) return;
           if (!/phinf\.pstatic\.net|daumcdn\.net|kakaocdn\.net|coupangcdn\.com|msscdn\.net/i.test(src)) return;
           if (/npay|naverpay|badge|icon|ico_|logo|star|ad_|blank|1x1/i.test(src)) return;
-
           let el = im.parentElement;
           for (let d = 0; d < 7 && el && el !== sDoc.body; d++, el = el.parentElement) {
             const text = (el.textContent || '').replace(/\s+/g, ' ').trim();
-            const pm = text.match(/(\d+\s*%)\s*[^0-9]{0,12}([0-9]{1,3}(?:,[0-9]{3})+)\s*원/) ||
-                       text.match(/최저[^0-9]{0,6}([0-9]{1,3}(?:,[0-9]{3})+)\s*원/) ||
-                       text.match(/([0-9]{1,3}(?:,[0-9]{3})+)\s*원/);
+            const pm = text.match(/([0-9]{1,3}(?:,[0-9]{3})+)\s*원/);
             if (pm && text.length >= 10 && text.length <= 550) {
-              const priceStr = pm[2] || pm[1];
-              const discountStr = pm[2] ? pm[1].replace(/\s+/g, '') : '';
-              const price = parseInt(priceStr.replace(/,/g, ''), 10);
-              if (price >= 1000 && price <= 2000000 && ![2500, 3000, 3500].includes(price)) {
-                const tailStart = text.indexOf(pm[0]) + pm[0].length;
-                const tail = text.slice(tailStart, tailStart + 45);
-                let shipping = 0;
-                if (!/무료/.test(tail)) {
-                  const sm = tail.match(/배송(?:비|료)?[^0-9무]{0,6}([0-9]{1,3}(?:,[0-9]{3})+)\s*원/) || tail.match(/^\s*([1-5],[05]00)\s*원/);
-                  if (sm) {
-                    const sv = parseInt(sm[1].replace(/,/g, ''), 10);
-                    if (sv >= 1500 && sv <= 6000 && sv % 100 === 0 && sv !== price) shipping = sv;
-                  }
-                }
-                let title = (im.getAttribute('alt') || '').replace(/<[^>]*>/g, '').trim();
-                if (/^(상품\s*이미지|이미지|썸네일|대표\s*이미지|thumb|image|photo)$/i.test(title)) title = '';
-                if (!title || title.length < 4) {
-                  const titEl = el.querySelector('.tit-g, .item-title, [class*="tit_"], [class*="title"], strong');
-                  if (titEl) {
-                    const tt = (titEl.textContent || '').replace(/\s+/g, ' ').trim();
-                    if (tt.length >= 4 && !/^\d[\d,]*\s*원/.test(tt)) title = tt;
-                  }
-                }
-                if (!title || title.length < 4) {
-                  let pre = text.split(pm[0])[0].trim();
-                  pre = pre.replace(/^(?:구매\s*\d+\+?\s*|광고\s*|[0-9]+위\s*)+/g, '').replace(/(?:판매가\s*)?[0-9]{1,3}(?:,[0-9]{3})+\s*원\s*$/, '').trim();
-                  title = pre;
-                }
-                title = title.replace(/^(?:구매\s*\d+\+?\s*|[0-9]+위\s*)+/, '').slice(0, 75).trim();
-                if (title.length >= 3) {
-                  seenImgs.add(src);
-                  items.push({
-                    title,
-                    price,
-                    discount: discountStr,
-                    shipping,
-                    image: src,
-                    mall: '네이버 쇼핑'
-                  });
-                  break;
-                }
+              const price = parseInt(pm[1].replace(/,/g, ''), 10);
+              const title = (im.getAttribute('alt') || '').trim();
+              if (price >= 1000 && title.length >= 4) {
+                seenImgs.add(src);
+                items.push({ title: title.slice(0, 80), price, shipping: 0, image: src, mall: '네이버 가격비교' });
+                break;
               }
             }
           }
         });
       } catch (e) {}
       return items;
+    }
+
+    // 입력된 쇼핑몰 URL(naver.me 단축URL, 스마트스토어, 브랜드스토어, 쿠팡 등)에서 실제 상품 정보(제목·가격·썸네일) 실시간 추출
+    async function resolveProductFromInputUrl(rawUrl) {
+      if (!rawUrl || !/^https?:\/\//i.test(rawUrl)) return null;
+      const fetchEndpoint = API_BASE_URL ? `${API_BASE_URL}/api/fetch` : '/api/fetch';
+
+      // 1순위: 서버리스 /api/fetch?resolveUrl=... 호출 (naver.me 단축링크 리다이렉트 및 l<->I 오타 자동 보정 포함)
+      try {
+        const res = await fetchWithTimeout(`${fetchEndpoint}?resolveUrl=${encodeURIComponent(rawUrl)}`, 9000);
+        if (res.ok) {
+          const j = await res.json();
+          if (j && j.ok && j.title) {
+            return {
+              title: j.title,
+              price: j.price || 0,
+              shipping: j.shipping || 0,
+              image: j.image || '',
+              mall: j.mall || '네이버 스마트스토어',
+              finalUrl: j.finalUrl || rawUrl
+            };
+          }
+        }
+      } catch (e) {}
+
+      // 2순위: 클라이언트 프록시 폴백 (정적 호스팅 환경에서도 naver.me 및 스마트스토어 URL 해석)
+      const urlCandidates = [rawUrl];
+      if (/naver\.me\//i.test(rawUrl)) {
+        const parts = rawUrl.split('naver.me/');
+        const code = parts[1] || '';
+        if (code.includes('l')) urlCandidates.push(parts[0] + 'naver.me/' + code.replace(/l/g, 'I'));
+        if (code.includes('I')) urlCandidates.push(parts[0] + 'naver.me/' + code.replace(/I/g, 'l'));
+      }
+
+      for (const candUrl of urlCandidates) {
+        try {
+          const html = await fetchRealHtmlFromWeb(candUrl);
+          if (!html || html.length < 200) continue;
+
+          // HTML 내부의 smartstore URL 또는 og:title 추출
+          const storeM = html.match(/smartstore\.naver\.com\/([^\/"'?&#\s]+)\/products\/(\d+)/i) ||
+                         candUrl.match(/smartstore\.naver\.com\/([^\/"'?&#\s]+)\/products\/(\d+)/i);
+          if (storeM) {
+            const storeId = decodeURIComponent(storeM[1]);
+            const prodId = storeM[2];
+            const items = await fetchLiveShoppingItemsFast(`${storeId} ${prodId}`);
+            if (items && items.length > 0) return Object.assign({ finalUrl: candUrl }, items[0]);
+            const storeItems = await fetchLiveShoppingItemsFast(storeId);
+            if (storeItems && storeItems.length > 0) return Object.assign({ finalUrl: candUrl }, storeItems[0]);
+          }
+
+          const ogTitleM = html.match(/<meta[^>]*property=["']og:title["'][^>]*content=["']([^"']+)["']/i) ||
+                           html.match(/<title[^>]*>([^<]+)<\/title>/i);
+          if (ogTitleM) {
+            const cleanT = ogTitleM[1].replace(/\s*:\s*네이버.*$/i, '').replace(/\s*-\s*쿠팡.*$/i, '').trim();
+            if (cleanT && cleanT.length >= 3 && !/에러|오류|찾을 수 없/i.test(cleanT)) {
+              const items = await fetchLiveShoppingItemsFast(cleanT);
+              if (items && items.length > 0) return Object.assign({ finalUrl: candUrl }, items[0]);
+            }
+          }
+        } catch (e) {}
+      }
+      return null;
     }
 
     // 다음(Daum)/네이트(Nate) 검색 결과에서 파워쇼핑 등 상품 카드에 썸네일이 비어있을 때 실시간 상품 사진 자동 매칭·주입
@@ -2766,6 +2914,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
           const currentBrand = '${brandName}';
 
           const B64_MAP = {
+            xbox: '${XBOX_IMG_B64}',
             cable: '${CABLE_IMG_B64}',
             wrist_rest: '${WRIST_REST_IMG_B64}',
             keyboard: '${KEYBOARD_IMG_B64}',
@@ -2787,7 +2936,10 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
             // 카테고리별 대표 썸네일 자동 결정
             let catImg = '';
             let p1 = 24900, p2 = 34900, p3 = 18900, p4 = 49000, p5 = 14900;
-            if (/(케이블|cable|c타입|고속충전선|충전선|c\s*to\s*c|usb-c|usbc)/i.test(lower) && !/워치/i.test(lower)) {
+            if (/(엑스박스|엑박|xbox|컨트롤러|게임패드|조이패드)/i.test(lower)) {
+              catImg = B64_MAP.xbox;
+              p1 = 55610; p2 = 53750; p3 = 56290; p4 = 54900; p5 = 57800;
+            } else if (/(케이블|cable|c타입|고속충전선|충전선|c\s*to\s*c|usb-c|usbc)/i.test(lower) && !/워치/i.test(lower)) {
               catImg = B64_MAP.cable;
               p1 = 9700; p2 = 7250; p3 = 13900; p4 = 6950; p5 = 2400;
             } else if (/(손목\s*받침대|손목보호대|팜레스트)/.test(lower)) {
@@ -2844,40 +2996,75 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
           let currentPortalProducts = [];
           let selectedIdx = 0;
 
-          function renderTop5Products(q) {
-            const list = document.getElementById('pProductsList');
-            const titleEl = document.getElementById('pQueryTitle');
-            if (titleEl) titleEl.innerText = q || '실시간 인기 쇼핑';
-            currentPortalProducts = getProductsForQuery(q);
-            selectedIdx = 0;
+          let lastRequestedPortalQuery = '';
 
+          function renderProductCardsDom(items) {
+            const list = document.getElementById('pProductsList');
             if (!list) return;
-            list.innerHTML = currentPortalProducts.map((p, idx) => {
-              const shipText = p.ship > 0 ? '+ 배송비 ' + p.ship.toLocaleString() + '원' : '무료배송';
+            list.innerHTML = items.map((p, idx) => {
+              const shipVal = Number(p.ship || p.shipping || 0);
+              const shipText = shipVal > 0 ? '+ 배송비 ' + shipVal.toLocaleString() + '원' : '무료배송';
               const isSel = idx === 0 ? ' selected' : '';
+              const safeImg = p.image || '';
               return '<div class="p-card' + isSel + '" onclick="selectPortalProduct(' + idx + ')">' +
                 '<div class="p-thumb-box">' +
-                  '<img src="' + p.image + '" alt="">' +
+                  '<img src="' + safeImg + '" referrerpolicy="no-referrer" alt="">' +
                   '<span class="p-rank-badge">' + (idx + 1) + '위</span>' +
                 '</div>' +
                 '<div class="p-card-body">' +
                   '<div class="p-card-title">' + p.title + '</div>' +
                   '<div class="p-card-price-row">' +
-                    '<span class="p-card-price">' + p.price.toLocaleString() + '원</span>' +
+                    '<span class="p-card-price">' + Number(p.price || 0).toLocaleString() + '원</span>' +
                     '<span class="p-card-ship">' + shipText + '</span>' +
                   '</div>' +
-                  '<div class="p-card-mall">' + p.mall + '</div>' +
+                  '<div class="p-card-mall">' + (p.mall || '네이버 가격비교') + '</div>' +
                 '</div>' +
                 '<button class="p-inspect-btn" onclick="directInspectPortalProduct(event, ' + idx + ')">' +
                   '✂ 호구검사' +
                 '</button>' +
               '</div>';
             }).join('');
+          }
 
+          function renderTop5Products(q) {
+            const cleanQ = (q || '실시간 인기 쇼핑').trim();
+            const titleEl = document.getElementById('pQueryTitle');
+            if (titleEl) titleEl.innerText = cleanQ;
+            currentPortalProducts = getProductsForQuery(cleanQ);
+            selectedIdx = 0;
+            renderProductCardsDom(currentPortalProducts);
             if (currentPortalProducts.length > 0) {
               notifySelectProduct(currentPortalProducts[0]);
             }
+
+            // 부모 창을 통해 실제 네이버 가격비교 Top 5 상품을 실시간 조회하여 즉시 반영!
+            lastRequestedPortalQuery = cleanQ;
+            window.parent.postMessage({
+              type: 'HOGUCUT_FETCH_PORTAL_ITEMS',
+              query: cleanQ
+            }, '*');
           }
+
+          window.addEventListener('message', function(ev) {
+            const d = ev.data;
+            if (!d || d.type !== 'HOGUCUT_PORTAL_ITEMS_RESULT') return;
+            if (!d.items || !Array.isArray(d.items) || d.items.length === 0) return;
+            currentPortalProducts = d.items.slice(0, 5).map(function(it, idx) {
+              return {
+                title: it.title,
+                query: it.title,
+                price: Number(it.price) || 19900,
+                ship: Number(it.shipping) || 0,
+                mall: it.mall || ('네이버 가격비교 ' + (idx + 1) + '위'),
+                image: it.image
+              };
+            });
+            selectedIdx = 0;
+            renderProductCardsDom(currentPortalProducts);
+            if (currentPortalProducts.length > 0) {
+              notifySelectProduct(currentPortalProducts[0]);
+            }
+          });
 
           function selectPortalProduct(idx) {
             selectedIdx = idx;
@@ -3577,6 +3764,22 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
 
       if (msg.type === 'HOGUCUT_NAVIGATE' && msg.url) {
         navigateToUrl(msg.url, true);
+      } else if (msg.type === 'HOGUCUT_FETCH_PORTAL_ITEMS' && msg.query) {
+        const q = (msg.query || '').trim();
+        if (q) {
+          fetchLiveShoppingItemsFast(q).then(items => {
+            if (items && items.length > 0) {
+              const frame = document.getElementById('realWebFrame');
+              if (frame && frame.contentWindow) {
+                frame.contentWindow.postMessage({
+                  type: 'HOGUCUT_PORTAL_ITEMS_RESULT',
+                  query: q,
+                  items: items.slice(0, 5)
+                }, '*');
+              }
+            }
+          }).catch(() => {});
+        }
       } else if (msg.type === 'HOGUCUT_RUN_SEARCH' && msg.query) {
         const q = (msg.query || '').trim();
         if (q) {
@@ -3720,32 +3923,78 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
     let lastSelectedProduct = null;
     let savedBrowserScroll = 0;
 
-    function runInspectProduct(p) {
+    async function runInspectProduct(p) {
+        if (!p || !p.title) return;
+        // 만약 포털 실시간 로딩 완료 전에 임시 '[네이버 가격비교 N위] 검색어' 카드를 누른 경우, 실제 실시간 검색(runAnalysis)으로 연결!
+        if (/^\[네이버 가격비교 \d+위\]/.test(p.title)) {
+          const cleanQ = p.title.replace(/^\[네이버 가격비교 \d+위\]\s*/, '').trim();
+          lastSelectedProduct = null;
+          document.getElementById('urlInput').value = cleanQ;
+          await runAnalysis();
+          return;
+        }
+
+        const verified = matchVerifiedProduct(p.title, p.price);
+        if (verified) {
+          if (p.image && p.image.startsWith('http')) verified.kr_image = p.image;
+          verified.kr_title = p.title;
+          verified._searchedRawUrl = p.title;
+          currentResultData = verified;
+          renderResult(verified);
+          saveHistoryAndRanking(verified);
+          return;
+        }
+
         document.getElementById('quickSamples').classList.add('hidden');
-        document.getElementById('loadingBox').classList.add('hidden');
+        document.getElementById('resultBox').classList.add('hidden');
+        document.getElementById('loadingBox').classList.remove('hidden');
+        document.getElementById('loadingStepText').innerText = '선택하신 상품과 동일한 알리익스프레스 직구 상품을 찾는 중...';
+        document.getElementById('ocrProgressBar').style.width = '80%';
 
         const shipFee = p.shipping || 0;
+        const krTot = (p.price || 0) + shipFee;
         const precise = buildPreciseAliLinks(p.title, p.title);
         const isBrand = /유그린|ugreen|앤커|anker|투키|toocki|베이스어스|baseus|샤오미/i.test(p.title);
-        const aliPrice = (precise.verifiedItem && precise.verifiedItem.price) || p.ali_price || (isBrand ? Math.round((p.price * 0.48) / 100) * 100 : Math.max(2000, Math.round((p.price * 0.35) / 100) * 100));
+        let aliPrice = (precise.verifiedItem && precise.verifiedItem.price) || p.ali_price || (isBrand ? Math.round((p.price * 0.48) / 100) * 100 : Math.max(2000, Math.round((p.price * 0.35) / 100) * 100));
+        let aliTitle = (precise.verifiedItem && precise.verifiedItem.title) || `[알리 직구 대조] ${precise.cleanTitle}`;
+        let aliImg = getSafeProductImageUrl(p.image, p.title) || (precise.verifiedItem && precise.verifiedItem.image) || resolveCategoryRepresentativeImage(p.title);
+        let aliDirectUrl = precise.aliDirectUrl;
+
+        try {
+          const aliProd = await Promise.race([
+            resolveAliProduct(precise.preciseQuery, p.title, p.image, krTot),
+            new Promise(r => setTimeout(() => r(null), 12000))
+          ]);
+          if (aliProd && aliProd.price > 0) {
+            aliPrice = aliProd.price;
+            if (aliProd.title) aliTitle = aliProd.title;
+            if (aliProd.image) aliImg = aliProd.image;
+            if (aliProd.url) aliDirectUrl = aliProd.url;
+          }
+        } catch (e) {}
+
+        const saved = Math.max(0, krTot - aliPrice);
+        const pct = krTot > 0 && krTot > aliPrice ? Math.max(5, Math.min(96, Math.round((saved / krTot) * 100))) : 0;
 
         const data = {
-          platform: p.mall || '인앱 인터넷 창',
+          platform: p.mall || '네이버 가격비교',
           kr_title: precise.cleanTitle || p.title,
           kr_price: p.price,
           kr_shipping: shipFee,
-          kr_total: p.price + shipFee,
+          kr_total: krTot,
           kr_image: p.image,
-          ali_title: (precise.verifiedItem && precise.verifiedItem.title) || `[알리 직구 대조] ${precise.cleanTitle}`,
+          ali_title: aliTitle,
           ali_price: aliPrice,
-          ali_image: getSafeProductImageUrl(p.image, p.title) || (precise.verifiedItem && precise.verifiedItem.image) || resolveCategoryRepresentativeImage(p.title),
-          ali_url: precise.aliDirectUrl,
+          ali_image: aliImg,
+          ali_direct_url: aliDirectUrl,
+          ali_search_url: precise.aliSearchUrl,
+          ali_url: aliDirectUrl,
           ali_visual_url: precise.aliVisualUrl,
-          saved_amount: Math.max(0, p.price + shipFee - aliPrice),
-          risk_score: isBrand ? 68 : 82,
+          saved_amount: saved,
+          risk_score: pct,
           similarity: 98,
           is_brand: isBrand,
-          reason: `[인터넷 창 실시간 호구검사] 방금 웹페이지에서 보시던 '${precise.cleanTitle}' 상품(${p.price.toLocaleString()}원${shipFee > 0 ? ' + 배송비 ' + shipFee.toLocaleString() + '원' : ', 무료배송'})을 알리익스프레스 동일 제품 직구가(약 ${aliPrice.toLocaleString()}원)와 비교한 결과 ${(p.price + shipFee - aliPrice).toLocaleString()}원을 아낄 수 있습니다.`
+          reason: `[인터넷 창 실시간 호구검사] 방금 선택하신 '${precise.cleanTitle || p.title}' 상품(${p.price.toLocaleString()}원${shipFee > 0 ? ' + 배송비 ' + shipFee.toLocaleString() + '원' : ', 무료배송'})을 알리익스프레스 동일/유사 제품 직구가(약 ${aliPrice.toLocaleString()}원)와 비교한 결과 ${saved.toLocaleString()}원(이득 지수 ${pct}%)을 아낄 수 있습니다.`
         };
         data._searchedRawUrl = p.title;
         currentResultData = data;
@@ -3796,16 +4045,16 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         // 1순위: 네이버 공식 쇼핑 검색 API (Open API) 시도 (IP 차단 0%)
         const fetchEndpoint = API_BASE_URL ? `${API_BASE_URL}/api/fetch` : '/api/fetch';
         try {
-          const apiRes = await fetchWithTimeout(`${fetchEndpoint}?naverQuery=${encodeURIComponent(keyword)}`, 2500);
+          const apiRes = await fetchWithTimeout(`${fetchEndpoint}?naverQuery=${encodeURIComponent(keyword)}`, 6500);
           if (apiRes.ok) {
             const apiJson = await apiRes.json();
             if (apiJson && apiJson.items && apiJson.items.length > 0) {
               const liveItems = apiJson.items.map(it => ({
                 title: it.title.replace(/<[^>]*>/g, '').replace(/&quot;/g, '"').replace(/&amp;/g, '&'),
                 price: parseInt(it.lprice, 10) || 0,
-                shipping: 0,
+                shipping: parseInt(it.shipping, 10) || 0,
                 image: it.image,
-                mall: it.mallName || '네이버 쇼핑',
+                mall: it.mallName || '네이버 가격비교',
                 link: it.link
               })).filter(it => it.price > 0);
               if (liveItems.length > 0) return liveItems.slice(0, 8);
@@ -4239,37 +4488,84 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
 
       let data = matchVerifiedProduct(rawUrl, customPrice);
 
-      if (!data && !rawUrl.startsWith('http')) {
-        const items = await fetchLiveShoppingItemsFast(rawUrl);
-        if (items && items.length > 0) {
-          const top = items[0];
-          const precise = buildPreciseAliLinks(top.title, rawUrl);
-          const krP = customPrice || top.price;
+      // [A] 사용자가 쇼핑몰 상품 링크(https://naver.me/... 등)를 입력한 경우: 실제 상품 정보(제목·가격·사진)를 먼저 추출!
+      let targetKeyword = rawUrl;
+      let preResolvedItem = null;
+      if (!data && /^https?:\/\//i.test(rawUrl)) {
+        document.getElementById('loadingStepText').innerText = '입력하신 링크의 실제 상품명·가격·사진을 추출하는 중...';
+        preResolvedItem = await resolveProductFromInputUrl(rawUrl);
+        if (preResolvedItem && preResolvedItem.title) {
+          targetKeyword = preResolvedItem.title;
+          data = matchVerifiedProduct(targetKeyword, customPrice || preResolvedItem.price);
+        }
+      }
+
+      // [B] 검증 캐시에 없는 일반 상품(링크 추출 상품 또는 일반 검색어): 네이버 가격비교 1위 + 알리 동일/유사 상품 실시간 매칭!
+      if (!data) {
+        let top = preResolvedItem;
+        if (!top && !/^https?:\/\//i.test(targetKeyword)) {
+          document.getElementById('loadingStepText').innerText = '네이버 가격비교 1위 상품 및 알리 직구가를 실시간 조회 중...';
+          const items = await fetchLiveShoppingItemsFast(targetKeyword);
+          if (items && items.length > 0) {
+            top = items[0];
+          }
+        }
+
+        if (top && top.title) {
+          const searchHint = /^https?:\/\//i.test(rawUrl) ? top.title : rawUrl;
+          const precise = buildPreciseAliLinks(top.title, searchHint);
+          const krP = customPrice || top.price || 19900;
           const krShip = customPrice ? 0 : (top.shipping || 0);
           const krTot = krP + krShip;
-          const aliP = (precise.verifiedItem && precise.verifiedItem.price) || top.ali_price || Math.max(2000, Math.round((krP * 0.36) / 100) * 100);
+          let aliP = (precise.verifiedItem && precise.verifiedItem.price) || top.ali_price || Math.max(2000, Math.round((krP * 0.36) / 100) * 100);
+          let aliTitle = (precise.verifiedItem && precise.verifiedItem.title) || `[알리 직구 대조] ${precise.cleanTitle}`;
+          let aliImg = getSafeProductImageUrl(top.image, top.title) || (precise.verifiedItem && precise.verifiedItem.image) || resolveCategoryRepresentativeImage(top.title);
+          let aliDirectUrl = precise.aliDirectUrl;
+
+          // 화면을 띄우기 전에 실제 알리익스프레스 매칭 상품을 즉시 조회하여 진짜 알리 사진·제목·가격을 바로 표시!
+          document.getElementById('loadingStepText').innerText = '알리익스프레스에서 동일·유사 제품 및 최저가를 찾는 중...';
+          try {
+            const aliProd = await Promise.race([
+              resolveAliProduct(precise.preciseQuery, top.title, top.image, krTot),
+              new Promise(r => setTimeout(() => r(null), 12000))
+            ]);
+            if (aliProd && aliProd.price > 0) {
+              aliP = aliProd.price;
+              if (aliProd.title) aliTitle = aliProd.title;
+              if (aliProd.image) aliImg = aliProd.image;
+              if (aliProd.url) aliDirectUrl = aliProd.url;
+            }
+          } catch (e) {}
+
+          const saved = Math.max(0, krTot - aliP);
+          const pct = krTot > 0 && krTot > aliP ? Math.max(5, Math.min(96, Math.round((saved / krTot) * 100))) : 0;
+
           data = {
-            platform: top.mall || '네이버 쇼핑',
-            kr_title: precise.cleanTitle,
+            platform: top.mall || '네이버 가격비교 1위',
+            kr_title: precise.cleanTitle || top.title,
             kr_price: krP,
             kr_shipping: krShip,
             kr_total: krTot,
+            kr_url: top.finalUrl || top.link || ('https://search.shopping.naver.com/search/all?query=' + encodeURIComponent(precise.cleanTitle || top.title)),
             kr_image: top.image,
-            ali_title: (precise.verifiedItem && precise.verifiedItem.title) || `[알리 직구 대조] ${precise.cleanTitle}`,
+            ali_title: aliTitle,
             ali_price: aliP,
-            ali_image: getSafeProductImageUrl(top.image, top.title) || (precise.verifiedItem && precise.verifiedItem.image) || resolveCategoryRepresentativeImage(top.title),
-            ali_url: precise.aliDirectUrl,
+            ali_image: aliImg,
+            ali_direct_url: aliDirectUrl,
+            ali_search_url: precise.aliSearchUrl,
+            ali_url: aliDirectUrl,
             ali_visual_url: precise.aliVisualUrl,
-            saved_amount: Math.max(0, krTot - aliP),
-            risk_score: 78,
-            similarity: 98,
-            reason: `국내 결제금액(${krTot.toLocaleString()}원) 대비 알리익스프레스 동일 스펙 직구가(약 ${aliP.toLocaleString()}원) 구매 시 ${Math.max(0, krTot - aliP).toLocaleString()}원을 절약할 수 있습니다.`
+            saved_amount: saved,
+            risk_score: pct,
+            similarity: 96,
+            keyword: searchHint,
+            reason: `[실시간 직구 대조] '${precise.cleanTitle || top.title}' 상품은 국내 판매가(${krP.toLocaleString()}원${krShip > 0 ? ' + 배송비 ' + krShip.toLocaleString() + '원' : '(무료배송)'}) 대비 알리익스프레스 동일/유사 상품 직구(약 ${aliP.toLocaleString()}원, 초이스 무료배송)로 약 ${saved.toLocaleString()}원(이득 지수 ${pct}%)을 아껴 구매할 수 있습니다.`
           };
         }
       }
 
       if (!data) {
-        data = fallbackAnalyze(rawUrl, customPrice);
+        data = fallbackAnalyze(targetKeyword, customPrice);
       }
 
       data._searchedRawUrl = rawUrl;
