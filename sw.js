@@ -1,12 +1,16 @@
-const CACHE_NAME = 'hogucut-v2.2.0';
+const CACHE_NAME = 'hogucut-v2.3.0';
 
 const PRECACHE_ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './assets/icon.jpg',
+  './assets/kids_shoes.png',
+  './assets/s26_case.png',
   './assets/watch_product.png',
-  './assets/breezyp_product.png'
+  './assets/breezyp_product.png',
+  './assets/toocki_product.png',
+  './assets/ugreen_product.png'
 ];
 
 self.addEventListener('install', (e) => {
