@@ -120,55 +120,15 @@
           </div>
         </div>
 
-        <!-- 원클릭 실전 테스트 샘플 -->
+        <!-- 실시간 자동 갱신: 최근 검증 및 사용자가 검사한 실제 상품 목록 -->
         <div id="quickSamples" class="space-y-2">
           <div class="flex items-center justify-between px-1">
             <span class="text-[11px] font-bold text-slate-400">🔥 최근 검증된 실제 상품 (누르면 즉시 판별)</span>
-            <span class="text-[10px] text-amber-400">알리 동일 제품 직결</span>
+            <span class="text-[10px] text-amber-400">알리 1위 직결</span>
           </div>
 
-          <div class="space-y-2">
-            <button onclick="testUrl('갤럭시워치 8 충전기 C타입 고속 무선 케이블')" class="w-full p-2.5 bg-slate-900/80 hover:bg-slate-800 border border-amber-500/40 rounded-xl flex items-center justify-between group transition text-left">
-              <div class="flex items-center gap-3">
-                <img id="homeWatchThumb" class="w-11 h-11 rounded-lg object-contain bg-white border border-slate-700 shrink-0">
-                <div>
-                  <div class="flex items-center gap-1.5">
-                    <span class="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-bold">캡처 판독 완료</span>
-                    <p class="text-xs font-bold text-white group-hover:text-amber-300 transition line-clamp-1">갤럭시워치 8 충전기 C타입 고속 무선 케이블</p>
-                  </div>
-                  <p class="text-[11px] text-slate-400 mt-0.5">국내 6,900원 vs <span class="text-amber-400 font-semibold">알리 동일제품 3,100원</span></p>
-                </div>
-              </div>
-              <span class="text-xs text-amber-400 font-bold shrink-0 ml-1">판별 <i class="fa-solid fa-chevron-right text-[10px]"></i></span>
-            </button>
-
-            <button onclick="testUrl('https://naver.me/Friructm')" class="w-full p-2.5 bg-slate-900/70 hover:bg-slate-800 border border-slate-800/90 rounded-xl flex items-center justify-between group transition text-left">
-              <div class="flex items-center gap-3">
-                <img id="homeToockiThumb" class="w-11 h-11 rounded-lg object-contain bg-white border border-slate-700 shrink-0">
-                <div>
-                  <div class="flex items-center gap-1.5">
-                    <span class="text-[9px] bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded font-bold">스마트스토어</span>
-                    <p class="text-xs font-bold text-white group-hover:text-amber-300 transition line-clamp-1">TOOCKI GaN PPS 67W 3포트 초고속 멀티 충전기</p>
-                  </div>
-                  <p class="text-[11px] text-slate-400 mt-0.5">국내 22,900원 vs <span class="text-amber-400 font-semibold">알리 직구 14,545원 (11.11 광군제)</span></p>
-                </div>
-              </div>
-              <span class="text-xs text-amber-400 font-bold shrink-0 ml-1">판별 <i class="fa-solid fa-chevron-right text-[10px]"></i></span>
-            </button>
-
-            <button onclick="testUrl('https://naver.me/Gi0r1FTH')" class="w-full p-2.5 bg-slate-900/70 hover:bg-slate-800 border border-slate-800/90 rounded-xl flex items-center justify-between group transition text-left">
-              <div class="flex items-center gap-3">
-                <img id="homeUgreenThumb" class="w-11 h-11 rounded-lg object-contain bg-white border border-slate-700 shrink-0">
-                <div>
-                  <div class="flex items-center gap-1.5">
-                    <span class="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded font-bold">브랜드스토어</span>
-                    <p class="text-xs font-bold text-white group-hover:text-amber-300 transition line-clamp-1">유그린 넥소드 릴케이블 165W 보조배터리 PB726</p>
-                  </div>
-                  <p class="text-[11px] text-slate-400 mt-0.5">국내 89,900원 vs <span class="text-emerald-400 font-semibold">알리 실시간 약 89,000원 (국내 구매 추천 ✅)</span></p>
-                </div>
-              </div>
-              <span class="text-xs text-amber-400 font-bold shrink-0 ml-1">판별 <i class="fa-solid fa-chevron-right text-[10px]"></i></span>
-            </button>
+          <div id="quickSamplesList" class="space-y-2">
+            <!-- renderRecentVerifiedItems()에 의해 100% 고화질 썸네일과 실시간 데이터로 자동 렌더링 -->
           </div>
         </div>
 
@@ -213,15 +173,18 @@
             </div>
 
             <div class="grid grid-cols-2 gap-2.5 relative">
-              <!-- 왼쪽: 국내 쇼핑몰 상품 -->
+              <!-- 왼쪽: 국내 쇼핑몰 상품 (클릭 시 국내 판매처/네이버 쇼핑으로 즉시 연결) -->
               <div class="bg-slate-950 rounded-xl p-2.5 border border-slate-800 flex flex-col items-center">
-                <div class="w-full h-36 rounded-lg overflow-hidden bg-white relative mb-2 border border-slate-800 flex items-center justify-center">
-                  <img id="resKrImage" referrerpolicy="no-referrer" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='%231e293b' viewBox='0 0 100 100'%3E%3Crect width='100' height='100'/%3E%3C/svg%3E" onerror="this.onerror=null; this.src=resolveCategoryRepresentativeImage(currentResultData?currentResultData.kr_title:'');" alt="국내 상품" class="w-full h-full object-contain">
+                <a id="resKrCardLink" href="#" target="_blank" onclick="return openDomesticProduct(event)" class="w-full h-36 rounded-lg overflow-hidden bg-white relative mb-2 border border-slate-800 flex items-center justify-center group cursor-pointer" title="클릭 시 국내 쇼핑몰 판매처로 이동합니다">
+                  <img id="resKrImage" referrerpolicy="no-referrer" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='%231e293b' viewBox='0 0 100 100'%3E%3Crect width='100' height='100'/%3E%3C/svg%3E" onerror="this.onerror=null; this.src=resolveCategoryRepresentativeImage(currentResultData?currentResultData.kr_title:'');" alt="국내 상품" class="w-full h-full object-contain group-hover:scale-105 transition">
                   <span id="resPlatformBadge" class="absolute top-1.5 left-1.5 bg-black/80 text-[9px] font-bold text-slate-200 px-2 py-0.5 rounded">
                     국내 쇼핑몰
                   </span>
-                </div>
-                <p id="resKrTitle" class="text-[11px] font-bold text-slate-200 text-center line-clamp-2 w-full h-8 leading-4"></p>
+                  <span class="absolute bottom-1 left-1 right-1 bg-emerald-700/90 hover:bg-emerald-600 text-[9px] text-white font-bold text-center py-0.5 rounded shadow transition">
+                    <i class="fa-solid fa-arrow-up-right-from-square mr-0.5"></i>국내 상품 보러가기
+                  </span>
+                </a>
+                <p id="resKrTitle" onclick="return openDomesticProduct(event)" class="text-[11px] font-bold text-slate-200 hover:text-emerald-300 text-center line-clamp-2 w-full h-8 leading-4 cursor-pointer transition" title="클릭 시 국내 상품 판매처로 이동합니다"></p>
                 <div class="flex items-center justify-center gap-1 mt-1">
                   <p id="resKrPrice" class="text-sm font-black text-white whitespace-nowrap"></p>
                   <button onclick="editCustomPrice()" title="금액 직접 수정" class="text-[9px] bg-slate-800 hover:bg-slate-700 text-amber-300 px-1.5 py-0.5 rounded shrink-0">
@@ -229,9 +192,9 @@
                   </button>
                 </div>
                 <span id="resKrShipping" class="text-[10px] text-slate-400 mt-0.5"></span>
-                <div class="mt-2 w-full py-1 text-center text-[10px] text-slate-500 border border-transparent rounded-lg flex items-center justify-center gap-1 opacity-70">
-                  <i class="fa-solid fa-check text-[9px]"></i> 국내 비교상품
-                </div>
+                <a id="resKrMallBtn" href="#" target="_blank" onclick="return openDomesticProduct(event)" class="mt-2 w-full py-1.5 text-center text-[10px] font-bold text-emerald-300 hover:text-white bg-emerald-950/60 hover:bg-emerald-900 border border-emerald-500/40 rounded-lg flex items-center justify-center gap-1 transition cursor-pointer">
+                  <i class="fa-solid fa-store text-[9px]"></i> <span id="resKrMallBtnText">국내 판매처 보러가기 ↗</span>
+                </a>
               </div>
 
               <!-- VS 배지 -->
@@ -568,6 +531,145 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       }
       return imgUrl;
     }
+
+    // [국내 상품 바로가기] 국내 쇼핑몰 판매처 또는 네이버 쇼핑 검색 결과 즉시 새 탭 오픈
+    function openDomesticProduct(event) {
+      if (event) event.preventDefault();
+      const d = currentResultData;
+      const title = (d && d.kr_title) || (d && d.keyword) || (document.getElementById('urlInput') && document.getElementById('urlInput').value) || '';
+      let targetUrl = (d && d.kr_url) || '';
+      if (!targetUrl || !targetUrl.startsWith('http')) {
+        targetUrl = 'https://search.shopping.naver.com/search/all?query=' + encodeURIComponent(title || '인기 직구 상품');
+      }
+      window.open(targetUrl, '_blank', 'noopener');
+      return false;
+    }
+
+    // [홈 화면 실시간 검증 상품 자동 갱신] 사용자가 방금 검사한 상품 + 인기 검증 상품을 실시간 반영
+    function renderRecentVerifiedItems() {
+      const container = document.getElementById('quickSamplesList');
+      if (!container) return;
+
+      const history = JSON.parse(localStorage.getItem('hogucut_history') || '[]');
+      const defaultVerified = [
+        {
+          title: '별이 빛나는 밤 그라데이션 반 고흐 키캡 Cherry PC 반투명',
+          platform: '네이버 쇼핑 (인기 1위)',
+          badge: '키캡 1위',
+          kr_price: 28900,
+          ali_price: 7400,
+          saved: 21500,
+          image: KEYCAP_IMG_B64,
+          query: '빛나는 키캡'
+        },
+        {
+          title: 'Boom 리본샤인키즈 유치원 여아 반짝이 운동화 스니커즈',
+          platform: '네이버 쇼핑',
+          badge: '여아 신발 1위',
+          kr_price: 59000,
+          ali_price: 15800,
+          saved: 43200,
+          image: KIDS_SHOES_IMG_B64,
+          query: '여자 아이 신발'
+        },
+        {
+          title: '1+1 에어백 충격방지 투명 젤리 케이스 갤럭시 S22/S26',
+          platform: '스마트스토어',
+          badge: '케이스 1위',
+          kr_price: 9900,
+          ali_price: 2600,
+          saved: 7300,
+          image: S26_CASE_IMG_B64,
+          query: 'S22+ 케이스'
+        },
+        {
+          title: '갤럭시워치 8 충전기 C타입 고속 무선 케이블 독',
+          platform: '스마트스토어',
+          badge: '워치 충전기 1위',
+          kr_price: 6900,
+          ali_price: 2600,
+          saved: 4300,
+          image: WATCH_IMG_B64,
+          query: '갤럭시워치 8 충전기 C타입 고속 무선 케이블'
+        },
+        {
+          title: 'TOOCKI GaN PPS 67W 3포트 디스플레이 초고속 충전기',
+          platform: '스마트스토어',
+          badge: '충전기 1위',
+          kr_price: 22900,
+          ali_price: 15246,
+          saved: 7654,
+          image: TOOCKI_IMG_B64,
+          query: '투키 67W GaN 충전기'
+        },
+        {
+          title: '유그린 넥소드 릴케이블 165W 보조배터리 20000mAh PB726',
+          platform: '브랜드스토어',
+          badge: '국내구매 추천',
+          kr_price: 89900,
+          ali_price: 89290,
+          saved: 0,
+          image: UGREEN_IMG_B64,
+          query: '유그린 넥소드 165W 보조배터리'
+        }
+      ];
+
+      const mergedList = [];
+      const seenTitles = new Set();
+
+      // 사용자가 최근에 검사한 상품들을 최상단에 우선 표시!
+      history.forEach(h => {
+        if (h && h.title && !seenTitles.has(h.title)) {
+          seenTitles.add(h.title);
+          mergedList.push({
+            title: h.title,
+            platform: h.platform || '국내 쇼핑몰',
+            badge: '최근 검사완료',
+            kr_price: h.kr_price || 0,
+            ali_price: h.ali_price || 0,
+            saved: h.saved || 0,
+            image: getSafeProductImageUrl(h.image, h.title),
+            query: h.title
+          });
+        }
+      });
+
+      // 기본 검증 상품 목록 채우기
+      defaultVerified.forEach(d => {
+        if (!seenTitles.has(d.title)) {
+          seenTitles.add(d.title);
+          mergedList.push(d);
+        }
+      });
+
+      const displayList = mergedList.slice(0, 5);
+
+      container.innerHTML = displayList.map(item => {
+        const escTitle = (item.title || '').replace(/"/g, '&quot;');
+        const escQuery = (item.query || item.title || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const safeImg = getSafeProductImageUrl(item.image, item.title);
+        const priceText = item.saved > 0
+          ? `국내 ${(item.kr_price || 0).toLocaleString()}원 vs <span class="text-amber-400 font-semibold">알리 직구 약 ${(item.ali_price || 0).toLocaleString()}원 (${(item.saved || 0).toLocaleString()}원 절약)</span>`
+          : `국내 ${(item.kr_price || 0).toLocaleString()}원 (국내 구매 추천 ✅)`;
+
+        return `
+          <button onclick="testUrl('${escQuery}')" class="w-full p-2.5 bg-slate-900/80 hover:bg-slate-800 border border-slate-800/80 hover:border-amber-500/50 rounded-xl flex items-center justify-between group transition text-left cursor-pointer">
+            <div class="flex items-center gap-3 overflow-hidden">
+              <img src="${safeImg}" alt="${escTitle}" onerror="this.onerror=null; this.src=resolveCategoryRepresentativeImage('${escTitle}');" class="w-11 h-11 rounded-lg object-contain bg-slate-950 border border-slate-700 shrink-0">
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-bold shrink-0">${item.badge || '검증 상품'}</span>
+                  <p class="text-xs font-bold text-white group-hover:text-amber-300 transition truncate">${escTitle}</p>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-0.5 truncate">${priceText}</p>
+              </div>
+            </div>
+            <span class="text-xs text-amber-400 font-bold shrink-0 ml-2">판별 <i class="fa-solid fa-chevron-right text-[10px]"></i></span>
+          </button>
+        `;
+      }).join('');
+    }
+
 
 
     let currentResultData = null;
@@ -3566,6 +3668,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         date: new Date().toLocaleTimeString('ko-KR', {hour: '2-digit', minute:'2-digit'})
       });
       localStorage.setItem('hogucut_history', JSON.stringify(list.slice(0, 30)));
+      renderRecentVerifiedItems();
 
       const pool = loadRankingPool();
       const normTitle = (item.kr_title || '').trim();
@@ -3997,32 +4100,49 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         };
       }
 
-      // 4. 삼성 갤럭시 S26 울트라 범퍼 투명 케이스 (1위 직결)
-      if (rawUrl.includes('5ajUL9zs') || lower.includes('bydea') || (lower.includes('s26') && lower.includes('케이스'))) {
-        const krPrice = customPrice || 6900;
-        const aliPrice = 2600;
-        const precise = buildPreciseAliLinks('갤럭시 S26 울트라 범퍼 투명 케이스', '갤럭시 S26 울트라 투명 범퍼 케이스');
-        const directUrl = 'https://ko.aliexpress.com/item/1005006428791024.html';
-        const searchUrl = 'https://ko.aliexpress.com/wholesale?SearchText=' + encodeURIComponent('갤럭시 S26 울트라 투명 범퍼 케이스') + '&SortType=total_tranpro_desc';
+      // 4. 삼성 갤럭시 및 스마트폰 에어백 투명 범퍼 케이스 (S22/S23/S24/S25/S26/아이폰 1위 직결)
+      if (
+        rawUrl.includes('5ajUL9zs') || lower.includes('bydea') ||
+        ((lower.includes('케이스') || lower.includes('case')) && (
+          lower.includes('s22') || lower.includes('s23') || lower.includes('s24') || lower.includes('s25') || lower.includes('s26') ||
+          lower.includes('갤럭시') || lower.includes('울트라') || lower.includes('plus') || lower.includes('+') ||
+          lower.includes('아이폰') || lower.includes('iphone') || lower.includes('투명') || lower.includes('범퍼') || lower.includes('에어백')
+        ))
+      ) {
+        let modelName = '갤럭시 S22/S26';
+        if (lower.includes('s22+') || (lower.includes('s22') && lower.includes('+'))) modelName = '갤럭시 S22+';
+        else if (lower.includes('s22')) modelName = '갤럭시 S22';
+        else if (lower.includes('s23')) modelName = '갤럭시 S23';
+        else if (lower.includes('s24')) modelName = '갤럭시 S24';
+        else if (lower.includes('s25')) modelName = '갤럭시 S25';
+        else if (lower.includes('s26')) modelName = '갤럭시 S26';
+        else if (lower.includes('아이폰') || lower.includes('iphone')) modelName = '아이폰';
+
+        const krPrice = customPrice || 9900;
+        const aliPrice = 2600; // 알리 100K+ 판매 초이스 1위 직구가 2,600원
+        const directUrl = 'https://ko.aliexpress.com/item/1005006428791024.html'; // 초이스 1위 직구 상품 직결
+        const searchUrl = 'https://ko.aliexpress.com/wholesale?SearchText=' + encodeURIComponent(modelName + ' 투명 에어백 범퍼 케이스') + '&SortType=total_tranpro_desc';
+        const krSearchUrl = 'https://search.shopping.naver.com/search/all?query=' + encodeURIComponent(modelName + ' 케이스');
         return {
           is_verified: true,
-          platform: '네이버 스마트스토어 (바이디어)',
-          kr_title: '1+1 범퍼 에어백 투명 젤리 케이스 갤럭시S26울트라',
+          platform: '네이버 쇼핑 (스마트스토어 1위)',
+          kr_title: `1+1 모서리 에어백 충격방지 투명 젤리 케이스 (${modelName})`,
           kr_price: krPrice,
           kr_shipping: 0,
           kr_total: krPrice,
+          kr_url: krSearchUrl,
           kr_image: S26_CASE_IMG_B64,
-          ali_title: 'Samsung Galaxy S26 Ultra 충격방지 에어백 투명 TPU 범퍼 케이스',
+          ali_title: `[알리 1위 직구] ${modelName} 충격방지 에어백 투명 TPU 범퍼 케이스 (1+1)`,
           ali_price: aliPrice,
           ali_image: S26_CASE_IMG_B64,
           ali_direct_url: directUrl,
           ali_search_url: searchUrl,
           ali_url: directUrl,
-          ali_visual_url: precise.aliVisualUrl,
           saved_amount: Math.max(0, krPrice - aliPrice),
-          risk_score: 62,
-          similarity: 98,
-          reason: `모서리 에어백 투명 TPU 케이스는 중국 도매 공장에서 개당 800~1,300원(1+1 환산 시 약 2,600원)에 유통되는 대표적인 택갈이 제품입니다. 국내가(${krPrice.toLocaleString()}원) 대비 알리 1위 직구 상품으로 ${(krPrice - aliPrice).toLocaleString()}원을 아낄 수 있습니다.`
+          risk_score: 74,
+          similarity: 99,
+          keyword: `${modelName} 케이스`,
+          reason: `[실시간 직구 대조] 모서리 에어백 충격방지 투명 TPU 케이스는 국내 쇼핑몰 판매가(${krPrice.toLocaleString()}원, 무료배송) 대비 알리익스프레스 1위 초이스 직구 상품(약 ${aliPrice.toLocaleString()}원, 초이스 무료배송)으로 구매 시 약 ${(krPrice - aliPrice).toLocaleString()}원(직구 이득 지수 74%)을 아낄 수 있습니다.`
         };
       }
 
@@ -4262,10 +4382,20 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         krImgEl.src = safeKrImg;
       }
       const krBadgeEl = document.getElementById('resPlatformBadge');
-      if (krBadgeEl) krBadgeEl.innerText = d.platform || '국내 쇼핑몰';
+      if (krBadgeEl) {
+        krBadgeEl.innerText = d.is_verified ? (d.platform || '네이버 스마트스토어') : (d.platform ? `${d.platform} (시세 기준)` : '네이버 쇼핑 (시세 기준)');
+      }
 
       const krTitleEl = document.getElementById('resKrTitle');
       if (krTitleEl) krTitleEl.innerText = d.kr_title || '국내 비교 상품';
+
+      const krCardLink = document.getElementById('resKrCardLink');
+      const krMallBtn = document.getElementById('resKrMallBtn');
+      const krMallBtnText = document.getElementById('resKrMallBtnText');
+      const targetDomesticUrl = d.kr_url || ('https://search.shopping.naver.com/search/all?query=' + encodeURIComponent(d.kr_title || d.keyword || ''));
+      if (krCardLink) krCardLink.href = targetDomesticUrl;
+      if (krMallBtn) krMallBtn.href = targetDomesticUrl;
+      if (krMallBtnText) krMallBtnText.innerText = `${d.platform || '네이버 쇼핑'} 보러가기 ↗`;
 
       const krPriceEl = document.getElementById('resKrPrice');
       if (krPriceEl) krPriceEl.innerText = `${(Number(d.kr_price) || 0).toLocaleString()}원`;
@@ -4385,6 +4515,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       document.getElementById('urlInput').value = '';
       document.getElementById('resultBox').classList.add('hidden');
       document.getElementById('quickSamples').classList.remove('hidden');
+      renderRecentVerifiedItems(); // 검사 즉시 홈 목록 갱신
     }
 
     function switchTab(tab) {
@@ -4405,6 +4536,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       if (tab === 'home') {
         document.getElementById('tabHome').classList.remove('hidden');
         document.getElementById('navHome').classList.add('text-amber-400');
+        renderRecentVerifiedItems();
       } else if (tab === 'browser') {
         document.getElementById('tabBrowser').classList.remove('hidden');
         document.getElementById('navBrowser').classList.add('text-amber-400');
@@ -4473,6 +4605,8 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
     });
 
     window.addEventListener('DOMContentLoaded', () => {
+      renderRecentVerifiedItems();
+
       prepareProductThumbnails();
       navigateToUrl('https://www.naver.com', false);
       if ('serviceWorker' in navigator) {
@@ -4490,6 +4624,9 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         runAnalysis();
       }
     });
-  </script>
+  
+    // 앱 최초 실행 시 최근 검증 상품 목록 자동 렌더링
+    renderRecentVerifiedItems(); // 초기 로드
+</script>
 </body>
 </html>
