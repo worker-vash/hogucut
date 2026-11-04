@@ -76,17 +76,122 @@ function parseNaverShoppingFromHtml(rawHtml) {
       if (mt && mt.length >= 2 && mt.length <= 20) mall = mt;
     }
 
+    // Direct product link extraction
+    let link = '';
+    const adLinkM = (beforeChunk + afterChunk.substring(0, 300)).match(/href=["'](https:\/\/ader\.naver\.com\/[^"']+)["']/i);
+    if (adLinkM) {
+      link = adLinkM[1].replace(/&amp;/g, '&');
+    } else {
+      const pidM = imgUrl.match(/main_\d+\/(\d+)\./);
+      if (pidM) {
+        link = `https://search.shopping.naver.com/catalog/${pidM[1]}`;
+      } else {
+        link = `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(title)}`;
+      }
+    }
+
     const normTitleKey = title.toLowerCase().replace(/\s+/g, '').slice(0, 25);
     if (seenTitles.has(normTitleKey)) continue;
     seenTitles.add(normTitleKey);
     seenImgs.add(imgUrl);
 
-    const itemObj = { title, price, shipping, image: imgUrl, mall, isAd };
+    const itemObj = { title, price, shipping, image: imgUrl, mall, link, isAd };
     if (isAd) adItems.push(itemObj);
     else organicItems.push(itemObj);
   }
 
   return [...organicItems, ...adItems];
+}
+
+// Helper to parse Daum / Kakao Shoppinghow items from mobile search HTML
+function parseDaumShoppingFromHtml(html, portalName = '다음 쇼핑하우') {
+  const items = [];
+  if (!html || typeof html !== 'string') return items;
+  const seenLinks = new Set();
+  const seenTitles = new Set();
+
+  // 1. kakaoShareData / ITL_* regex
+  const shareM = html.match(/kakaoShareData:\s*(\{.+?\})\s*,\s*(?:[a-zA-Z0-9_$]+\s*:|<\/script>)/s) ||
+                 html.match(/"param":\s*\{"w":"tot"[^}]*\},"data":\s*(\{[^}]+\})/);
+  if (shareM) {
+    try {
+      const dataStr = shareM[1];
+      for (let i = 0; i < 15; i++) {
+        const titleM = dataStr.match(new RegExp(`"ITL_TITLE_${i}"\\s*:\\s*"([^"]+)"`));
+        const priceM = dataStr.match(new RegExp(`"ITL_DESCRIPTION_${i}"\\s*:\\s*"([0-9,]+)\\s*원?"`));
+        const urlM = dataStr.match(new RegExp(`"ITL_MOBILE_WEB_URL_${i}"\\s*:\\s*"([^"]+)"`));
+        const imgM = dataStr.match(new RegExp(`"ITL_IMAGE_URL_${i}"\\s*:\\s*"([^"]+)"`));
+
+        if (titleM && priceM) {
+          const tit = titleM[1].replace(/\\"/g, '"').trim();
+          const cleanTitKey = tit.toLowerCase().replace(/\s+/g, '').slice(0, 20);
+          let link = urlM ? urlM[1].replace(/\\\//g, '/').replace(/&amp;/g, '&') : '';
+          let img = imgM ? imgM[1].replace(/\\\//g, '/').replace(/&amp;/g, '&') : '';
+          if (!seenTitles.has(cleanTitKey)) {
+            seenTitles.add(cleanTitKey);
+            if (link) seenLinks.add(link);
+            items.push({
+              title: tit,
+              price: parseInt(priceM[1].replace(/,/g, ''), 10),
+              shipping: 0,
+              image: img,
+              link: link,
+              mall: portalName
+            });
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  // 2. HTML card regex (<div class="item_shopping"> or shoppinghow links)
+  const cardRegex = /<li[^>]*>\s*<div class="item_shopping">([\s\S]*?)<\/li>/gi;
+  let m;
+  while ((m = cardRegex.exec(html)) && items.length < 10) {
+    const cardHtml = m[1];
+    const linkM = cardHtml.match(/href="(https:\/\/m\.shoppinghow\.kakao\.com\/m\/product\/([A-Z0-9]+)\/[^"]+)"/i);
+    if (!linkM) continue;
+    const link = linkM[1].replace(/&amp;/g, '&');
+    const pid = linkM[2];
+    if (seenLinks.has(link)) continue;
+
+    const imgM = cardHtml.match(/data-original-src="([^"]+)"/i) ||
+                 cardHtml.match(/src="([^"]*(?:daumcdn\.net|kakaocdn\.net)[^"]*)"/i);
+    let img = imgM ? imgM[1].replace(/&amp;/g, '&') : `https://search2.daumcdn.net/thumb/R320x320.q85/?fname=http%3A//shop1.daumcdn.net/shophow/p/${pid}.jpg`;
+
+    const cleanText = cardHtml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    const pm = cleanText.match(/최저가\s*([0-9]{1,3}(?:,[0-9]{3})+)\s*원/) || cleanText.match(/([0-9]{1,3}(?:,[0-9]{3})+)\s*원/);
+    let title = '';
+    if (pm) {
+      title = cleanText.split(pm[0])[0].trim().replace(/^>\s*/, '').replace(/쇼핑하우|신상품|인기상품/g, '').trim().slice(0, 70);
+    }
+    const titM = cardHtml.match(/class="[^"]*(?:tit-g|item_tit|tit_item|thumb_bf)[^"]*"[^>]*>([\s\S]*?)<\/(?:a|strong|div)>/i);
+    if ((!title || title.length < 3) && titM) {
+      title = titM[1].replace(/<[^>]+>/g, '').trim().slice(0, 70);
+    }
+    let price = pm ? parseInt(pm[1].replace(/,/g, ''), 10) : 0;
+    if (!title || !price || price < 500) continue;
+
+    const cleanTitKey = title.toLowerCase().replace(/\s+/g, '').slice(0, 20);
+    if (seenTitles.has(cleanTitKey)) continue;
+
+    let shipping = 0;
+    const sm = cleanText.match(/배송비\s*([0-9]{1,3}(?:,[0-9]{3})+)\s*원/);
+    if (sm) shipping = parseInt(sm[1].replace(/,/g, ''), 10);
+
+    seenTitles.add(cleanTitKey);
+    seenLinks.add(link);
+    items.push({
+      title,
+      price,
+      shipping,
+      image: img,
+      link,
+      mall: portalName
+    });
+  }
+
+  return items;
 }
 
 async function resolveShoppingUrlOnServer(rawInputUrl) {
@@ -296,12 +401,43 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  // 2. 네이버 쇼핑 검색 엔드포인트 (?naverQuery=...) — API 키가 있으면 공식 API, 없으면 실시간 모바일 네이버 가격비교 파싱 후 경량 JSON 반환
-  const naverQuery = req.query.naverQuery;
+  // 2. 포털별 실시간 쇼핑 검색 엔드포인트 (?portal=daum|nate|naver|google&query=... 또는 ?naverQuery=...)
+  const portalType = (req.query.portal || '').toLowerCase();
+  const queryStr = req.query.query || req.query.naverQuery || '';
   const clientId = process.env.NAVER_CLIENT_ID || req.query.clientId;
   const clientSecret = process.env.NAVER_CLIENT_SECRET || req.query.clientSecret;
+  const mobileUa = 'Mozilla/5.0 (Linux; Android 13; SM-S918N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
 
-  if (naverQuery) {
+  if (portalType === 'daum' || portalType === 'nate') {
+    const isNate = portalType === 'nate';
+    const portalName = isNate ? '네이트 쇼핑' : '다음 쇼핑하우';
+    const fetchUrl = isNate
+      ? `https://m.search.daum.net/nate?w=tot&q=${encodeURIComponent(queryStr)}`
+      : `https://m.search.daum.net/search?w=tot&q=${encodeURIComponent(queryStr)}`;
+    try {
+      const resp = await fetch(fetchUrl, {
+        headers: { 'User-Agent': mobileUa, 'Accept-Language': 'ko-KR,ko;q=0.9', 'Referer': isNate ? 'https://m.nate.com/' : 'https://m.daum.net/' }
+      });
+      const html = await resp.text();
+      const parsed = parseDaumShoppingFromHtml(html, portalName);
+      const formatted = parsed.slice(0, 10).map((it, idx) => ({
+        title: it.title,
+        lprice: String(it.price),
+        shipping: it.shipping || 0,
+        image: it.image,
+        mallName: portalName,
+        link: it.link || `https://m.search.daum.net/search?w=tot&q=${encodeURIComponent(it.title)}`
+      }));
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      return res.status(200).send(JSON.stringify({ items: formatted }));
+    } catch (e) {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      return res.status(200).send(JSON.stringify({ items: [], error: e.message }));
+    }
+  }
+
+  if (queryStr || req.query.naverQuery) {
+    const naverQuery = queryStr;
     if (clientId && clientSecret) {
       try {
         const apiUrl = `https://openapi.naver.com/v1/search/shop.json?query=${encodeURIComponent(naverQuery)}&display=10&sort=sim`;
@@ -318,7 +454,6 @@ module.exports = async function handler(req, res) {
     }
 
     try {
-      const mobileUa = 'Mozilla/5.0 (Linux; Android 13; SM-S918N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
       const nr = await fetch(`https://m.search.naver.com/search.naver?query=${encodeURIComponent(naverQuery)}`, {
         headers: { 'User-Agent': mobileUa, 'Accept-Language': 'ko-KR,ko;q=0.9', 'Referer': 'https://m.naver.com/' }
       });
@@ -334,13 +469,13 @@ module.exports = async function handler(req, res) {
           if (!parsedItems.some(p => p.image === m.image)) parsedItems.push(m);
         });
       }
-      const formatted = parsedItems.slice(0, 10).map(it => ({
+      const formatted = parsedItems.slice(0, 10).map((it, idx) => ({
         title: it.title,
         lprice: String(it.price),
         shipping: it.shipping || 0,
         image: it.image,
         mallName: it.mall || '네이버 가격비교',
-        link: it.link || ''
+        link: it.link || `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(it.title)}`
       }));
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       return res.status(200).send(JSON.stringify({ items: formatted }));
