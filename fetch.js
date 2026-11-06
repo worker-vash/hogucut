@@ -426,7 +426,7 @@ module.exports = async function handler(req, res) {
         shipping: it.shipping || 0,
         image: it.image,
         mallName: portalName,
-        link: it.link || `https://m.search.daum.net/search?w=tot&q=${encodeURIComponent(it.title)}`
+        link: it.link || `https://m.shoppinghow.kakao.com/m/search/q/${encodeURIComponent(it.title)}`
       }));
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       return res.status(200).send(JSON.stringify({ items: formatted }));
@@ -475,7 +475,7 @@ module.exports = async function handler(req, res) {
         shipping: it.shipping || 0,
         image: it.image,
         mallName: it.mall || '네이버 가격비교',
-        link: it.link || `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(it.title)}`
+        link: it.link || (it.image && it.image.match(/main_\d+\/(\d+)\./) ? `https://search.shopping.naver.com/catalog/${it.image.match(/main_\d+\/(\d+)\./)[1]}` : `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(it.title)}`)
       }));
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       return res.status(200).send(JSON.stringify({ items: formatted }));
