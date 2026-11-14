@@ -3349,30 +3349,56 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
 
     const CORE_CATEGORY_NOUNS = [
       '운동화', '스니커즈', '신발', '구두', '슬리퍼', '샌들', '부츠', '단화', '아동화', '장화', '슬립온',
-      '원피스', '티셔츠', '바지', '치마', '스커트', '잠옷', '내의', '레깅스', '자켓', '코트', '패딩', '가디건', '맨투맨', '후드티',
+      '경량패딩', '패딩조끼', '패딩', '후리스', '플리스', '자켓', '코트', '조끼', '베스트', '원피스', '티셔츠', '바지', '팬츠', '치마', '스커트', '잠옷', '내의', '레깅스', '가디건', '맨투맨', '후드티', '목도리', '스카프', '장갑',
       '백팩', '가방', '크로스백', '숄더백', '에코백', '파우치', '지갑', '핸드백', '캐리어',
-      '충전기', '보조배터리', '케이블', '어댑터', '케이스', '스트랩', '시계줄', '필름', '강화유리', '거치대', '그립톡', '이어폰', '헤드폰', '셀카봉', '삼각대',
+      '충전기', '보조배터리', '케이블', '어댑터', '케이스', '스트랩', '시계줄', '필름', '강화유리', '거치대', '그립톡', '이어폰', '헤드폰', '셀카봉', '삼각대', '모니터', '웹캠', '허브', '스피커',
+      '가습기', '온풍기', '전기요', '탄소매트', '요가매트', '매트', '에어프라이어', '커피머신', '전기포트', '청소기', '음식물처리기', '믹서기', '블렌더',
+      '텀블러', '하네스', '가슴줄', '장난감',
       '조명등', '무드등', '취침등', '수면등', '조명', '램프', '라이트', '스탠드', '랜턴',
       '컨트롤러', '게임패드', '조이패드', '조이스틱', '키보드', '마우스', '키캡', '손목받침대', '팜레스트'
     ];
 
     const SYNONYM_CLUSTERS = [
-      { name: 'shoes_sneakers', rep: '여아 운동화', words: ['신발', '운동화', '스니커즈', '구두', '슬립온', '단화', '샌들', '슬리퍼', '부츠', '아동화', '키즈운동화'] },
-      { name: 'magsafe', rep: '맥세이프', words: ['맥세이프', '마그네틱', '자석', 'magsafe', 'qi2'] },
-      { name: 'ring_holder', rep: '링 거치대', words: ['스마트톡', '핑거링', '링홀더', '거치대', '마그네틱링', '그립톡', '링 거치대', '링거치대'] },
-      { name: 'charger', rep: '고속 충전기', words: ['충전기', '어댑터', '어뎁터', '초고속충전기', '멀티충전기', 'charger', 'adapter', 'gan충전기', 'pps충전기'] },
-      { name: 'multi_charger_station', rep: '3in1 무선충전기', words: ['3in1충전기', '3in1거치대', '3in1', '2in1충전기', '충전거치대', '충전스테이션', '도킹스테이션'] },
-      { name: 'powerbank', rep: '보조배터리', words: ['보조배터리', '외장배터리', '파워뱅크', '대용량보조배터리', '미니보조배터리', 'powerbank'] },
-      { name: 'watch_strap', rep: '워치 스트랩', words: ['시계줄', '워치스트랩', '워치밴드', '워치줄', '스마트워치스트랩', '밀레니즈루프', '메탈스트랩', '가죽스트랩', '실리콘스트랩', '밴드', 'watchband'] },
-      { name: 'phone_case', rep: '폰케이스', words: ['케이스', '휴대폰케이스', '스마트폰케이스', '핸드폰케이스', '젤리케이스', '하드케이스', '범퍼케이스', 'phonecase'] },
-      { name: 'screen_protector', rep: '강화유리 필름', words: ['강화유리', '보호필름', '액정보호필름', '액정보호유리', '방탄필름', '지문방지필름'] },
-      { name: 'earphone_headphone', rep: '무선 이어폰', words: ['이어폰', '헤드폰', '헤드셋', '이어버드', '블루투스이어폰', '무선이어폰'] },
-      { name: 'selfie_tripod', rep: '셀카봉 삼각대', words: ['셀카봉', '삼각대셀카봉', '블루투스셀카봉', '미니삼각대'] },
-      { name: 'lamp_light', rep: 'LED 무드등', words: ['무드등', '조명등', '조명', '취침등', '수면등', '야간조명', '야간등', '램프', '라이트', '스탠드조명', '침실등', '아이방등', '인테리어조명', '센서등'] },
-      { name: 'game_controller', rep: '무선 게임 컨트롤러', words: ['컨트롤러', '게임패드', '조이패드', '조이스틱', '무선컨트롤러', '엑박패드', '패드'] },
-      { name: 'keyboard', rep: '기계식 키보드', words: ['키보드', '기계식키보드', '게이밍키보드', '무선키보드', '블루투스키보드'] },
-      { name: 'mouse', rep: '무선 마우스', words: ['마우스', '게이밍마우스', '무선마우스', '버티컬마우스'] },
-      { name: 'wrist_rest', rep: '손목받침대', words: ['손목받침대', '팜레스트', '손목쿠션', '손목보호대', '마우스패드'] }
+      { name: 'shoes_sneakers', rep: '아동 운동화', words: ['신발', '운동화', '스니커즈', '구두', '슬립온', '단화', '샌들', '슬리퍼', '부츠', '아동화', '키즈운동화', 'shoes', 'shoe', 'sneakers', 'sneaker', 'footwear', 'trainer', 'trainers', 'boots', 'sandals'] },
+      { name: 'kids_age', rep: '아동 키즈', words: ['아동', '키즈', '유아', '어린이', '주니어', '초등', '초등학생', '남아', '여아', '아기', 'kids', 'kid', 'children', 'child', 'toddler', 'boys', 'boy', 'girls', 'girl', 'baby'] },
+      { name: 'led_lighting', rep: 'LED 라이팅', words: ['라이팅', '반짝이', '발광', 'led', 'light', 'lighted', 'light-up', 'luminous', 'glowing', 'flashing'] },
+      { name: 'padding_jacket', rep: '경량 패딩 자켓', words: ['경량패딩', '패딩', '다운패딩', '자켓', '재킷', '후리스', '플리스', '코트', '조끼', '베스트', 'puffer', 'down jacket', 'jacket', 'fleece', 'coat', 'vest'] },
+      { name: 'thermal_pants', rep: '기모 팬츠 내의', words: ['발열내의', '내의', '히트택', '기모팬츠', '팬츠', '바지', '레깅스', 'thermal', 'underwear', 'pants', 'trousers', 'leggings'] },
+      { name: 'scarf', rep: '목도리 스카프', words: ['목도리', '스카프', '머플러', '숄', 'scarf', 'muffler', 'shawl'] },
+      { name: 'gloves', rep: '장갑', words: ['장갑', '골프장갑', '방한장갑', 'gloves', 'glove'] },
+      { name: 'magsafe', rep: '맥세이프', words: ['맥세이프', '마그네틱', '자석', 'magsafe', 'qi2', 'magnetic'] },
+      { name: 'ring_holder', rep: '스마트폰 거치대', words: ['스마트톡', '핑거링', '링홀더', '거치대', '마그네틱링', '그립톡', '링 거치대', '링거치대', 'stand', 'holder', 'mount', 'grip'] },
+      { name: 'charger', rep: '고속 충전기', words: ['충전기', '어댑터', '어뎁터', '초고속충전기', '멀티충전기', 'charger', 'adapter', 'gan', 'pps'] },
+      { name: 'cable', rep: 'C타입 케이블', words: ['케이블', '충전케이블', 'c타입', 'cable', 'usb-c', 'type-c', 'cord'] },
+      { name: 'multi_charger_station', rep: '3in1 무선충전기', words: ['3in1충전기', '3in1거치대', '3in1', '2in1충전기', '충전거치대', '충전스테이션', '도킹스테이션', 'charging station', 'wireless charger'] },
+      { name: 'powerbank', rep: '보조배터리', words: ['보조배터리', '외장배터리', '파워뱅크', '대용량보조배터리', '미니보조배터리', 'powerbank', 'power bank', 'battery pack'] },
+      { name: 'watch_strap', rep: '워치 스트랩', words: ['시계줄', '워치스트랩', '워치밴드', '워치줄', '스마트워치스트랩', '밀레니즈루프', '메탈스트랩', '가죽스트랩', '실리콘스트랩', '밴드', 'watchband', 'strap', 'band'] },
+      { name: 'phone_case', rep: '폰케이스', words: ['케이스', '휴대폰케이스', '스마트폰케이스', '핸드폰케이스', '젤리케이스', '하드케이스', '범퍼케이스', 'phonecase', 'case', 'cover'] },
+      { name: 'screen_protector', rep: '강화유리 필름', words: ['강화유리', '보호필름', '액정보호필름', '액정보호유리', '방탄필름', '지문방지필름', 'screen protector', 'tempered glass'] },
+      { name: 'earphone_headphone', rep: '무선 이어폰', words: ['이어폰', '헤드폰', '헤드셋', '이어버드', '블루투스이어폰', '무선이어폰', 'earphone', 'earbuds', 'headphone', 'headset', 'tws'] },
+      { name: 'speaker', rep: '블루투스 스피커', words: ['스피커', '블루투스스피커', 'speaker', 'bluetooth speaker'] },
+      { name: 'monitor', rep: '게이밍 모니터', words: ['모니터', '게이밍모니터', '휴대용모니터', 'monitor', 'display'] },
+      { name: 'webcam', rep: '웹캠', words: ['웹캠', '화상카메라', 'webcam', 'camera'] },
+      { name: 'usb_hub', rep: 'USB 허브', words: ['허브', 'usb허브', '도킹스테이션', 'hub', 'dock'] },
+      { name: 'humidifier', rep: '가습기', words: ['가습기', '미니가습기', 'humidifier'] },
+      { name: 'heater', rep: '전기 온풍기', words: ['온풍기', '히터', '난방기', 'heater', 'fan heater'] },
+      { name: 'electric_blanket', rep: '전기요 탄소매트', words: ['전기요', '탄소매트', '전기장판', '온수매트', 'electric blanket', 'heated blanket'] },
+      { name: 'air_fryer', rep: '에어프라이어', words: ['에어프라이어', 'air fryer', 'airfryer'] },
+      { name: 'coffee_machine', rep: '커피머신', words: ['커피머신', '에스프레소머신', 'coffee machine', 'espresso', 'coffee maker'] },
+      { name: 'kettle', rep: '전기포트', words: ['전기포트', '커피포트', '분유포트', 'kettle', 'electric kettle'] },
+      { name: 'vacuum', rep: '무선 청소기', words: ['청소기', '무선청소기', '핸디청소기', 'vacuum', 'vacuum cleaner'] },
+      { name: 'blender', rep: '믹서기 블렌더', words: ['믹서기', '블렌더', 'blender', 'mixer', 'juicer'] },
+      { name: 'backpack_bag', rep: '백팩 가방', words: ['백팩', '가방', '크로스백', '숄더백', '에코백', 'backpack', 'bag', 'crossbody', 'shoulder bag'] },
+      { name: 'tumbler', rep: '텀블러 보온병', words: ['텀블러', '보온병', '물병', 'tumbler', 'thermos', 'flask', 'bottle'] },
+      { name: 'yoga_mat', rep: '요가매트', words: ['요가매트', '운동매트', 'yoga mat', 'exercise mat'] },
+      { name: 'pet_harness', rep: '강아지 하네스', words: ['하네스', '가슴줄', '목줄', '리드줄', 'harness', 'leash', 'collar'] },
+      { name: 'pet_toy', rep: '고양이 장난감', words: ['장난감', '낚시대', '캣닢', 'toy', 'cat toy', 'teaser'] },
+      { name: 'selfie_tripod', rep: '셀카봉 삼각대', words: ['셀카봉', '삼각대셀카봉', '블루투스셀카봉', '미니삼각대', '삼각대', 'selfie stick', 'tripod'] },
+      { name: 'lamp_light', rep: 'LED 무드등', words: ['무드등', '조명등', '조명', '취침등', '수면등', '야간조명', '야간등', '램프', '라이트', '스탠드조명', '스탠드', '랜턴', '침실등', '아이방등', '인테리어조명', '센서등', 'lamp', 'night light', 'lantern', 'light bar'] },
+      { name: 'game_controller', rep: '무선 게임 컨트롤러', words: ['컨트롤러', '게임패드', '조이패드', '조이스틱', '무선컨트롤러', '엑박패드', '패드', 'controller', 'gamepad', 'joystick'] },
+      { name: 'keyboard', rep: '기계식 키보드', words: ['키보드', '기계식키보드', '게이밍키보드', '무선키보드', '블루투스키보드', 'keyboard'] },
+      { name: 'mouse', rep: '무선 마우스', words: ['마우스', '게이밍마우스', '무선마우스', '버티컬마우스', 'mouse'] },
+      { name: 'wrist_rest', rep: '손목받침대', words: ['손목받침대', '팜레스트', '손목쿠션', '손목보호대', '마우스패드', 'wrist rest', 'palm rest', 'mouse pad'] }
     ];
 
     const ONE_CHAR_KEEP = new Set(['폰', '링', '줄', '탭', '펜', '컵', '캡', '백', '잭', '핀', '케', '선', '등']);
@@ -3486,16 +3512,19 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         candidateQueries.push(`${devicePrefix} ${foundNouns[0]}`);
       }
 
-      // 4순위: 핵심 수식어 + 핵심 품목 명사 (품목 명사가 누락되어 엉뚱한 잡화가 뜨는 것 원천 방지)
+      // 4순위: 핵심 수식어 + 핵심 품목 명사 (한국어 상품명은 뒤쪽 수식어인 '아동 운동화', '라이팅 운동화' 등이 실제 품목에 가까움)
       if (foundNouns.length > 0) {
         const mainNoun = foundNouns[0];
         const nonNounWords = rawWords.filter(w => !foundNouns.includes(w) && w.toLowerCase() !== brandToken.toLowerCase() && !techSpecs.includes(w));
         if (nonNounWords.length >= 2) {
+          candidateQueries.push(`${nonNounWords.slice(-2).join(' ')} ${mainNoun}`);
           candidateQueries.push(`${nonNounWords.slice(0, 2).join(' ')} ${mainNoun}`);
         }
         if (nonNounWords.length >= 1) {
+          candidateQueries.push(`${nonNounWords[nonNounWords.length - 1]} ${mainNoun}`);
           candidateQueries.push(`${nonNounWords[0]} ${mainNoun}`);
         }
+        candidateQueries.push(mainNoun);
       }
 
       // 5순위: 클러스터 대표어
@@ -3516,11 +3545,19 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       const queries = [...new Set(candidateQueries.map(q => q.trim()).filter(q => q.length >= 2))];
       const primaryQuery = isDirectKeywordClean ? cleanKeyword : (queries[0] || cleanDisplayTitle || cleanSingleTitle);
 
+      const prioritizedCore = [...new Set([
+        ...foundNouns,
+        ...techSpecs,
+        ...(brandToken ? [brandToken] : []),
+        ...rawWords
+      ])];
+
       return {
         cleanTitle: cleanDisplayTitle || cleanSingleTitle,
         primaryQuery,
         queries,
-        coreWords: rawWords.slice(0, 5),
+        foundNouns,
+        coreWords: prioritizedCore.slice(0, 6),
         matchedClusters,
         isDomesticMade
       };
@@ -3980,6 +4017,14 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         if (/슬링백|크로스백|메신저백|힙색/i.test(t) && !/백팩|backpack/i.test(t)) return -9999;
       }
 
+      if (/신발|운동화|스니커즈|샌들|부츠|구두|슬리퍼|워커|단화|아동화/i.test(kr)) {
+        const hasFootwearWord = /신발|운동화|스니커즈|샌들|부츠|구두|슬리퍼|shoe|sneaker|sandal|boot|slipper|footwear|trainer/i.test(t);
+        if (!hasFootwearWord) return -9999;
+        if (/레고|블록|장난감|피규어|인형|티셔츠|후드|맨투맨|t-shirt|shirt|lego|building\s*block|toy|figure|dinosaur|공룡/i.test(t)) {
+          return -9999;
+        }
+      }
+
       const krMah = kr.match(/\b(\d{4,5})\s*mah\b/i);
       const aliMah = t.match(/\b(\d{4,5})\s*mah\b/i);
       if (krMah && aliMah) {
@@ -4024,7 +4069,9 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       // 3) 범용 핵심 단어 & 동의어 군집 일치 검증
       const u = buildUniversalAliQueries(krTitle || query, query);
       const coreWords = u.coreWords || [];
+      const foundNounsSet = new Set((u.foundNouns || []).map(x => x.toLowerCase()));
       let matchedCore = 0;
+      let hasCategoryHit = false;
 
       for (const cw of coreWords) {
         const lcw = cw.toLowerCase();
@@ -4039,11 +4086,14 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
             }
           }
         }
-        if (hit) matchedCore++;
+        if (hit) {
+          matchedCore++;
+          if (foundNounsSet.has(lcw)) hasCategoryHit = true;
+        }
       }
 
-      // 최소 2개 이상의 핵심 속성(기종 + 품목 등)이 일치하지 않으면 다른 상품으로 판정해 즉시 탈락
-      const minRequired = coreWords.length >= 2 ? 2 : 1;
+      // 핵심 품목 명사(예: 가습기, 요가매트, 텀블러)가 일치하거나, 단어가 1개인 경우 1개 일치부터 허용
+      const minRequired = (hasCategoryHit || coreWords.length < 2) ? 1 : 2;
       if (matchedCore < minRequired) {
         return -9999;
       }
@@ -4153,7 +4203,10 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       if (!bypassCache && aliResolveCache[cacheKey] !== undefined) return aliResolveCache[cacheKey];
 
       // 1차 구체적 쿼리 -> 결과 부족 시 2차/3차 압축 쿼리로 자동 단계별 재검색
-      const targetQueries = query ? [query, ...u.queries.filter(x => x !== query)] : u.queries;
+      const qWords = (query || '').trim().split(/\s+/).filter(Boolean);
+      const targetQueries = (query && qWords.length <= 4)
+        ? [query, ...u.queries.filter(x => x !== query)]
+        : (u.queries.length ? u.queries : (query ? [query] : []));
       for (const q of targetQueries) {
         const searchUrl = `https://ko.aliexpress.com/w/wholesale-${encodeURIComponent(q)}.html?SortType=total_tranpro_desc`;
         try {
@@ -4168,14 +4221,6 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
             .filter(x => x.textScore > 0)
             .sort((a, b) => b.textScore - a.textScore)
             .slice(0, 12);
-
-          if (!scored.length && cands.length > 0) {
-            // 엄격한 다중 단어 필터를 통과한 후보가 없을 경우, 해당 검색어의 상위 주문순 결과 중 국내가보다 저렴한 상품을 자동 선택
-            scored = cands
-              .filter(c => c && c.title && c.price > 0 && (krTotalPrice <= 0 || c.price < krTotalPrice))
-              .slice(0, 8)
-              .map((c, idx) => ({ cand: c, idx, textScore: 20 - idx * 0.5 }));
-          }
 
           if (!scored.length) continue; // 통과한 후보가 없으면 다음 압축 쿼리로 재시도!
 
@@ -4768,7 +4813,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
           const fetchEndpoint = API_BASE_URL ? `${API_BASE_URL}/api/fetch` : '/api/fetch';
           const lr = await fetchWithTimeout(`${fetchEndpoint}?url=${encodeURIComponent(targetUrl)}`, 9000);
           const lh = await lr.text();
-          if (lh && lh.length > 1000 && !lh.includes('[에러] 에러페이지 - 시스템오류') && !lh.includes('Missing url parameter')) return lh;
+          if (lh && lh.length > 1000 && !lh.includes('_____tmd_____') && !lh.includes('x5secdata') && !lh.includes('[에러] 에러페이지 - 시스템오류') && !lh.includes('Missing url parameter')) return lh;
         } catch (e) {}
       }
 
@@ -4795,7 +4840,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
           html = await res.text();
         }
 
-        if (!html || html.length < 400 || html.includes('[에러] 에러페이지 - 시스템오류') || html.includes('/sorry/index')) {
+        if (!html || html.length < 400 || html.includes('_____tmd_____') || html.includes('x5secdata') || html.includes('[에러] 에러페이지 - 시스템오류') || html.includes('/sorry/index')) {
           throw new Error('Blocked or invalid HTML');
         }
         return html;
@@ -4880,14 +4925,12 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         const isAd = /ader\.naver\.com|adcr\.naver\.com|ad_id=|class="[^"]*ad_|>광고</i.test(beforeChunk + afterChunk.slice(0, 1200));
 
         let link = '';
-        const adLinkM = (beforeChunk + afterChunk.slice(0, 400)).match(/href="(https?:\/\/ader\.naver\.com\/[^"]+)"/i);
-        const directLinkM = beforeChunk.match(/href="(https?:\/\/[^"]*(?:smartstore\.naver\.com\/[^"\/]+\/products\/\d+|brand\.naver\.com\/[^"\/]+\/products\/\d+|search\.shopping\.naver\.com\/catalog\/\d+|cr\.shopping\.naver\.com\/[^"]+)[^"]*)"/i) ||
-                            afterChunk.slice(0, 600).match(/href="(https?:\/\/[^"]*(?:smartstore\.naver\.com\/[^"\/]+\/products\/\d+|brand\.naver\.com\/[^"\/]+\/products\/\d+|search\.shopping\.naver\.com\/catalog\/\d+|cr\.shopping\.naver\.com\/[^"]+)[^"]*)"/i);
-        const pidFromImgM = src.match(/main_\d+\/(\d+)\./);
+        const linkScope = beforeChunk + afterChunk.slice(0, 800);
+        const adLinkM = linkScope.match(/href="(https?:\/\/ader\.naver\.com\/[^"]+)"/i);
+        const directLinkM = beforeChunk.match(/href="(https?:\/\/[^"]*(?:smartstore\.naver\.com\/[^"\/]+\/products\/\d+|brand\.naver\.com\/[^"\/]+\/products\/\d+|search\.shopping\.naver\.com\/catalog\/\d+|cr\d?\.shopping\.naver\.com\/[^"]+|m?\.?shopping\.naver\.com\/[^"]*products\/\d+)[^"]*)"/i) ||
+                            afterChunk.slice(0, 800).match(/href="(https?:\/\/[^"]*(?:smartstore\.naver\.com\/[^"\/]+\/products\/\d+|brand\.naver\.com\/[^"\/]+\/products\/\d+|search\.shopping\.naver\.com\/catalog\/\d+|cr\d?\.shopping\.naver\.com\/[^"]+|m?\.?shopping\.naver\.com\/[^"]*products\/\d+)[^"]*)"/i);
         if (directLinkM) {
           link = directLinkM[1].replace(/&amp;/g, '&');
-        } else if (pidFromImgM) {
-          link = 'https://search.shopping.naver.com/catalog/' + pidFromImgM[1];
         } else if (adLinkM) {
           link = adLinkM[1].replace(/&amp;/g, '&');
         }
@@ -4930,6 +4973,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
           if (titM) title = decodeHtml(titM[1]);
         }
         if (!title || title.length < 4) continue;
+        if (!link) link = 'https://msearch.shopping.naver.com/search/all?query=' + encodeURIComponent(title.slice(0, 80));
 
         seenImgs.add(src);
         items.push({
