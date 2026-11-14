@@ -4066,30 +4066,50 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         }
       }
 
-      // 3) 범용 핵심 단어 & 동의어 군집 일치 검증
+      // 3) 범용 핵심 단어 & 동의어 군집 일치 검증 (같은 군집 중복 카운트 방지 + 수식어 전용 군집 단독 통과 차단)
       const u = buildUniversalAliQueries(krTitle || query, query);
       const coreWords = u.coreWords || [];
       const foundNounsSet = new Set((u.foundNouns || []).map(x => x.toLowerCase()));
+      const MODIFIER_ONLY_CLUSTERS = new Set(['kids_age', 'led_lighting']);
+      const matchedClusterNames = new Set();
       let matchedCore = 0;
+      let nonModifierHits = 0;
       let hasCategoryHit = false;
 
       for (const cw of coreWords) {
         const lcw = cw.toLowerCase();
         let hit = tNoSpace.includes(lcw);
+        let hitCluster = '';
         if (!hit) {
           for (const cl of SYNONYM_CLUSTERS) {
             if (cl.words.some(w => w.trim().toLowerCase() === lcw || lcw.includes(w.trim()))) {
               if (cl.words.some(w => tNoSpace.includes(w.trim().toLowerCase()))) {
                 hit = true;
+                hitCluster = cl.name;
                 break;
               }
             }
           }
+        } else {
+          for (const cl of SYNONYM_CLUSTERS) {
+            if (cl.words.some(w => w.trim().toLowerCase() === lcw)) {
+              hitCluster = cl.name;
+              break;
+            }
+          }
         }
         if (hit) {
+          if (hitCluster && matchedClusterNames.has(hitCluster)) continue;
+          if (hitCluster) matchedClusterNames.add(hitCluster);
           matchedCore++;
+          if (!hitCluster || !MODIFIER_ONLY_CLUSTERS.has(hitCluster)) nonModifierHits++;
           if (foundNounsSet.has(lcw)) hasCategoryHit = true;
         }
+      }
+
+      // '키즈/아동/남아' 같은 수식어만 일치하고 실제 품목/브랜드/스펙 일치가 0개면 색칠공부 책 같은 오매칭 차단
+      if (nonModifierHits === 0 && coreWords.length > 0) {
+        return -9999;
       }
 
       // 핵심 품목 명사(예: 가습기, 요가매트, 텀블러)가 일치하거나, 단어가 1개인 경우 1개 일치부터 허용
@@ -8850,7 +8870,8 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
           });
         }
       } else if (msg.type === 'HOGUCUT_INSPECT_PORTAL_PRODUCT' && msg.product) {
-        const p = msg.product;
+        const p = Object.assign({}, msg.product);
+        if (!p.query && msg.query) p.query = msg.query;
         switchTab('home');
         document.getElementById('urlInput').value = p.title;
         lastSelectedProduct = Object.assign({}, p);
@@ -9057,7 +9078,17 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
 
         let aliRes = null;
         try {
-          aliRes = await resolveAliProduct(cleanQ, targetTitle, targetImage, krTot);
+          let aliSearchTitle = targetTitle;
+          let aliSearchQuery = cleanQ;
+          const uCheck = buildUniversalAliQueries(targetTitle);
+          if (uCheck.foundNouns.length === 0 && p.query) {
+            const uHint = buildUniversalAliQueries(p.query);
+            if (uHint.foundNouns.length > 0) {
+              aliSearchTitle = `${targetTitle} ${uHint.foundNouns[0]}`;
+              aliSearchQuery = `${cleanQ} ${uHint.foundNouns[0]}`;
+            }
+          }
+          aliRes = await resolveAliProduct(aliSearchQuery, aliSearchTitle, targetImage, krTot);
         } catch (e) {}
 
         document.getElementById('ocrProgressBar').style.width = '100%';
