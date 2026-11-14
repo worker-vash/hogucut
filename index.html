@@ -228,6 +228,20 @@
             </div>
             <p id="resAliMatchStatus" class="text-[10px] text-slate-400 text-center -mt-1"></p>
 
+            <!-- [신규 기능 3] 알리 유사 상품 Top 3 가로 비교 바 -->
+            <div id="resAliTop3Bar" class="hidden bg-slate-950/90 p-2.5 rounded-xl border border-slate-800 space-y-2">
+              <div class="flex items-center justify-between text-[10px]">
+                <span class="font-bold text-amber-300 flex items-center gap-1">
+                  <i class="fa-solid fa-layer-group"></i> 알리 유사 후보 Top 3 (터치 시 즉시 교체)
+                </span>
+                <span class="text-slate-500">실시간 매칭 순</span>
+              </div>
+              <div id="resAliTop3List" class="grid grid-cols-3 gap-2"></div>
+            </div>
+
+            <!-- [신규 기능 4] 관부가세($150) · 배송기간 포함 실질 이득 안내 -->
+            <div id="resLandedCostBanner" class="hidden rounded-xl px-3 py-2 text-[10px] border flex items-center justify-between gap-2"></div>
+
             <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/90 text-xs space-y-1">
               <p class="font-bold text-amber-400 flex items-center gap-1.5">
                 <i class="fa-solid fa-magnifying-glass-chart"></i> 호구컷 AI 판정 소견서
@@ -250,6 +264,11 @@
             <!-- [바이럴 확장] 카카오톡 / SNS 결과 공유 버튼 -->
             <button type="button" onclick="shareResultCard()" class="w-full py-3 bg-[#FEE500] hover:bg-[#FDD835] text-[#191919] font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-md shadow-amber-400/10 transition active:scale-95 cursor-pointer">
               <i class="fa-solid fa-comment text-sm"></i> 카톡 · SNS에 절약 결과 공유하기
+            </button>
+
+            <!-- [신규 기능 1] 찜한 상품 가격 추적 & 하락 알림 토글 -->
+            <button id="btnTrackPrice" type="button" onclick="toggleWatchlistCurrent()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 border border-emerald-500/40 rounded-xl text-xs font-bold text-emerald-300 flex items-center justify-center gap-1.5 transition cursor-pointer">
+              <i class="fa-regular fa-bell"></i> 가격 추적 찜하기 (하락 시 알림)
             </button>
 
             <div class="grid grid-cols-2 gap-2">
@@ -4274,7 +4293,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
           }, item.cand));
           aliResolveCandidatePool[cacheKey] = allCandidates;
 
-          const result = Object.assign({ url: `https://ko.aliexpress.com/item/${best.id}.html`, matchedQuery: q }, best);
+          const result = Object.assign({ url: `https://ko.aliexpress.com/item/${best.id}.html`, matchedQuery: q, _candidatePool: allCandidates }, best);
 
           // 검색 결과 가격이 누락되었거나 1,500원 미만의 옵션 미끼가로 의심될 때만 상세 페이지(PDP) 추가 조회 (속도 3배 향상)
           if (!best.price || best.price < 1500) {
@@ -9153,6 +9172,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
           similarity: simScore,
           is_brand: isBrand,
           keyword: p.query || cleanQ,
+          _aliCandidates: (aliRes && Array.isArray(aliRes._candidatePool) && aliRes._candidatePool.length) ? aliRes._candidatePool : (aliRes ? [aliRes] : []),
           _aliCandidateIdx: 0,
           reason: reasonText
         };
@@ -10233,12 +10253,167 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
           if (prod && currentResultData === d) {
             applyResolvedAliProduct(d, prod);
             const cacheKey = `${d._aliQuery || d.kr_title}||${d.kr_image || ''}||${d.kr_total || d.kr_price || 0}`;
-            d._aliCandidates = aliResolveCandidatePool[cacheKey] || [prod];
+            d._aliCandidates = aliResolveCandidatePool[cacheKey] || prod._candidatePool || [prod];
             d._aliCandidateIdx = 0;
             d._aliCacheKey = cacheKey;
+            renderAliTop3Bar(d);
+            renderLandedCostBanner(d);
           }
         }).catch(() => {});
       }
+
+      // 8. [신규 기능] 알리 Top 3 가로 비교 바 · 관부가세/배송 실질 이득 배너 · 가격 추적 버튼 상태 갱신
+      renderAliTop3Bar(d);
+      renderLandedCostBanner(d);
+      updateTrackPriceButton(d);
+    }
+
+    function renderAliTop3Bar(d) {
+      const bar = document.getElementById('resAliTop3Bar');
+      const listEl = document.getElementById('resAliTop3List');
+      if (!bar || !listEl) return;
+      const cands = (d && Array.isArray(d._aliCandidates)) ? d._aliCandidates.slice(0, 3) : [];
+      if (cands.length < 2) {
+        bar.classList.add('hidden');
+        listEl.innerHTML = '';
+        return;
+      }
+      bar.classList.remove('hidden');
+      const activeIdx = Number(d._aliCandidateIdx) || 0;
+      listEl.innerHTML = cands.map((c, idx) => {
+        const isActive = idx === activeIdx;
+        const safeImg = getSafeProductImageUrl(c.image || '', c.title || d.kr_title || '');
+        const priceTxt = c.price > 0 ? `${Number(c.price).toLocaleString()}원` : '가격확인';
+        const shortTitle = (c.title || '알리 상품').replace(/</g, '&lt;').slice(0, 22);
+        return `
+          <button type="button" onclick="selectAliCandidate(${idx})" class="text-left p-1.5 rounded-lg border transition cursor-pointer ${isActive ? 'bg-red-950/50 border-amber-400 ring-1 ring-amber-400/50' : 'bg-slate-900/90 border-slate-800 hover:border-slate-600'}">
+            <div class="relative w-full h-14 rounded bg-white overflow-hidden mb-1 flex items-center justify-center">
+              <img referrerpolicy="no-referrer" src="${safeImg}" class="w-full h-full object-contain" alt="후보 ${idx + 1}">
+              <span class="absolute top-0.5 left-0.5 px-1 py-0.2 rounded text-[8px] font-black ${isActive ? 'bg-amber-400 text-slate-950' : 'bg-slate-900/80 text-white'}">${idx + 1}위</span>
+            </div>
+            <p class="text-[9px] text-slate-300 line-clamp-1 font-medium">${shortTitle}</p>
+            <p class="text-[10px] font-black ${isActive ? 'text-amber-300' : 'text-emerald-400'}">${priceTxt}</p>
+          </button>`;
+      }).join('');
+    }
+
+    function selectAliCandidate(idx) {
+      const d = currentResultData;
+      if (!d || !Array.isArray(d._aliCandidates) || !d._aliCandidates[idx]) return;
+      d._aliCandidateIdx = idx;
+      const picked = d._aliCandidates[idx];
+      if (typeof applyResolvedAliProduct === 'function') {
+        applyResolvedAliProduct(d, picked);
+      } else {
+        d.ali_title = picked.title || d.ali_title;
+        d.ali_price = Number(picked.price) || d.ali_price;
+        d.ali_image = picked.image || d.ali_image;
+        d.ali_direct_url = picked.url || d.ali_direct_url;
+        d.ali_url = d.ali_direct_url;
+      }
+      renderResult(d);
+    }
+
+    function renderLandedCostBanner(d) {
+      const el = document.getElementById('resLandedCostBanner');
+      if (!el) return;
+      if (!d || !d._aliLiveVerified || !d.ali_price || d.ali_price <= 0) {
+        el.classList.add('hidden');
+        return;
+      }
+      const aliPrice = Number(d.ali_price) || 0;
+      const krTotal = (Number(d.kr_price) || 0) + (Number(d.kr_shipping) || 0);
+      const isOverCustoms = aliPrice >= 207000; // 미화 $150(약 20.7만 원) 초과 관부가세 기준
+      const estCustoms = isOverCustoms ? Math.round(aliPrice * 0.18) : 0;
+      const realDiff = krTotal - (aliPrice + estCustoms);
+
+      el.classList.remove('hidden');
+      if (isOverCustoms) {
+        el.className = 'rounded-xl px-3 py-2 text-[10px] border flex items-center justify-between gap-2 bg-red-950/40 border-red-500/40 text-red-200';
+        el.innerHTML = `
+          <span><i class="fa-solid fa-triangle-exclamation text-amber-400 mr-1"></i><strong>관부가세 주의 ($150↑)</strong> 예상 세금 약 +${estCustoms.toLocaleString()}원</span>
+          <span class="font-bold shrink-0 ${realDiff > 0 ? 'text-emerald-300' : 'text-red-300'}">${realDiff > 0 ? `세후 ${realDiff.toLocaleString()}원 이득` : '국내 구매 유리'}</span>`;
+      } else {
+        el.className = 'rounded-xl px-3 py-2 text-[10px] border flex items-center justify-between gap-2 bg-emerald-950/30 border-emerald-500/30 text-emerald-200';
+        el.innerHTML = `
+          <span><i class="fa-solid fa-shield-check text-emerald-400 mr-1"></i><strong>관부가세 면제($150↓)</strong> · 배송비 포함 실구매가</span>
+          <span class="font-bold text-slate-300 shrink-0">국내 1~2일 vs 알리 5~7일</span>`;
+      }
+    }
+
+    function getWatchlist() {
+      try { return JSON.parse(localStorage.getItem('hogucut_watchlist') || '[]'); } catch (e) { return []; }
+    }
+
+    function saveWatchlist(list) {
+      localStorage.setItem('hogucut_watchlist', JSON.stringify(list.slice(0, 30)));
+    }
+
+    function updateTrackPriceButton(d) {
+      const btn = document.getElementById('btnTrackPrice');
+      if (!btn || !d) return;
+      const list = getWatchlist();
+      const exists = list.some(x => x.title === d.kr_title);
+      if (exists) {
+        btn.className = 'w-full py-2.5 bg-emerald-950/60 hover:bg-emerald-900/60 border border-emerald-500 rounded-xl text-xs font-bold text-emerald-300 flex items-center justify-center gap-1.5 transition cursor-pointer';
+        btn.innerHTML = '<i class="fa-solid fa-bell"></i> 가격 추적 중 (클릭 시 해제)';
+      } else {
+        btn.className = 'w-full py-2.5 bg-slate-900 hover:bg-slate-800 border border-emerald-500/40 rounded-xl text-xs font-bold text-emerald-300 flex items-center justify-center gap-1.5 transition cursor-pointer';
+        btn.innerHTML = '<i class="fa-regular fa-bell"></i> 가격 추적 찜하기 (하락 시 알림)';
+      }
+    }
+
+    function toggleWatchlistCurrent() {
+      const d = currentResultData;
+      if (!d || !d.kr_title) return;
+      let list = getWatchlist();
+      const idx = list.findIndex(x => x.title === d.kr_title);
+      if (idx >= 0) {
+        list.splice(idx, 1);
+      } else {
+        list.unshift({
+          title: d.kr_title,
+          keyword: d.keyword || d.kr_title,
+          kr_price: Number(d.kr_price) || 0,
+          ali_price: Number(d.ali_price) || 0,
+          latest_ali_price: Number(d.ali_price) || 0,
+          kr_url: d.kr_url || '',
+          ali_url: d.ali_direct_url || d.ali_url || '',
+          image: d.kr_image || '',
+          trackedAt: Date.now(),
+          lastCheckedAt: Date.now()
+        });
+      }
+      saveWatchlist(list);
+      updateTrackPriceButton(d);
+    }
+
+    function removeWatchlistItem(idx, evt) {
+      if (evt) evt.stopPropagation();
+      const list = getWatchlist();
+      list.splice(idx, 1);
+      saveWatchlist(list);
+      renderHistory();
+    }
+
+    async function refreshWatchlistPrices() {
+      const list = getWatchlist();
+      if (!list.length) return;
+      const btn = document.getElementById('btnRefreshWatchlist');
+      if (btn) { btn.disabled = true; btn.innerText = '실시간 확인중...'; }
+      for (let i = 0; i < Math.min(list.length, 5); i++) {
+        const item = list[i];
+        try {
+          const prod = await resolveAliProduct(item.keyword || item.title, item.title, item.image, item.kr_price, true);
+          if (prod && prod.price >= 1000) {
+            item.latest_ali_price = Number(prod.price);
+            item.lastCheckedAt = Date.now();
+            if (prod.url) item.ali_url = prod.url;
+          }
+        } catch (e) {}
+      }
+      saveWatchlist(list);
+      renderHistory();
     }
 
     function resetHome() {
@@ -10312,12 +10487,53 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
 
     function renderHistory() {
       const box = document.getElementById('historyList');
+      const watchlist = getWatchlist();
       const list = JSON.parse(localStorage.getItem('hogucut_history') || '[]');
-      if (!list.length) {
+      let html = '';
+
+      if (watchlist.length > 0) {
+        html += `
+          <div class="mb-4 p-3 bg-emerald-950/20 border border-emerald-500/30 rounded-xl space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-extrabold text-emerald-300 flex items-center gap-1.5">
+                <i class="fa-solid fa-bell"></i> 가격 추적 찜 목록 (${watchlist.length})
+              </span>
+              <button id="btnRefreshWatchlist" type="button" onclick="refreshWatchlistPrices()" class="text-[10px] bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-200 px-2 py-1 rounded font-bold transition cursor-pointer">
+                🔄 지금 최저가 재확인
+              </button>
+            </div>
+            ${watchlist.map((w, wIdx) => {
+              const baseP = Number(w.ali_price) || 0;
+              const curP = Number(w.latest_ali_price) || baseP;
+              const drop = baseP - curP;
+              const dropBadge = drop >= 100
+                ? `<span class="text-[9px] bg-emerald-500 text-slate-950 px-1.5 py-0.5 rounded font-black animate-pulse">📉 -${drop.toLocaleString()}원 하락!</span>`
+                : `<span class="text-[9px] text-slate-400">변동 없음</span>`;
+              const directWUrl = ensureSpecificAliItemUrl(w.ali_url, w.title);
+              return `
+                <div class="p-2.5 bg-slate-900/90 border border-slate-800 rounded-lg space-y-1">
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="text-[11px] font-bold text-white line-clamp-1">${w.title}</span>
+                    <div class="flex items-center gap-1 shrink-0">
+                      <a href="${directWUrl}" target="_blank" rel="noopener" class="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-bold">알리 ↗</a>
+                      <button type="button" onclick="removeWatchlistItem(${wIdx}, event)" class="text-[9px] text-slate-500 hover:text-red-400 px-1">✕</button>
+                    </div>
+                  </div>
+                  <div class="flex items-center justify-between text-[10px]">
+                    <span class="text-slate-400">찜 당시 ${baseP.toLocaleString()}원 → <strong class="text-amber-300">현재 ${curP.toLocaleString()}원</strong></span>
+                    ${dropBadge}
+                  </div>
+                </div>`;
+            }).join('')}
+          </div>`;
+      }
+
+      if (!list.length && !watchlist.length) {
         box.innerHTML = `<div class="text-center py-12 text-xs text-slate-500">아직 검사한 상품 기록이 없습니다.</div>`;
         return;
       }
-      box.innerHTML = list.map((i, idx) => {
+
+      html += list.map((i, idx) => {
         const directAliUrl = ensureSpecificAliItemUrl(i.url, i.title);
         return `
         <div onclick="openHistoryItem(${idx})" class="block p-3 bg-slate-900 border border-slate-800 rounded-xl hover:border-amber-500/40 cursor-pointer transition">
@@ -10331,6 +10547,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
           </div>
         </div>
       `;}).join('');
+      box.innerHTML = html;
     }
 
     function clearHistory() {
@@ -10362,14 +10579,25 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       prepareProductThumbnails();
       navigateToUrl('https://www.naver.com', false);
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js?v=2.6.0').catch(() => {});
+        navigator.serviceWorker.register('sw.js?v=2.8.1').catch(() => {});
       }
       const params = new URLSearchParams(window.location.search);
-      const shareTitle = params.get('shareTitle') || params.get('q') || params.get('url') || params.get('text');
+      const action = params.get('action');
+      if (action === 'browser') {
+        switchTab('browser');
+      }
+
+      // PWA Share Target: 스마트폰 '공유하기 -> 호구컷'으로 들어온 url/text/title 자동 파싱 & 즉시 판별
+      const rawShareUrl = params.get('url') || '';
+      const rawShareText = params.get('text') || '';
+      const rawShareTitle = params.get('shareTitle') || params.get('q') || params.get('title') || '';
+      const extractedUrlM = (rawShareUrl + ' ' + rawShareText).match(/https?:\/\/[^\s]+/i);
+      const shareTargetInput = (extractedUrlM ? extractedUrlM[0] : '') || rawShareTitle || rawShareText;
       const sharePrice = params.get('sharePrice');
       const shareAli = params.get('shareAli');
-      if (shareTitle) {
-        document.getElementById('urlInput').value = shareTitle;
+      if (shareTargetInput) {
+        switchTab('home');
+        document.getElementById('urlInput').value = shareTargetInput.trim();
         if (sharePrice && shareAli) {
           customPrice = parseInt(sharePrice, 10);
         }
