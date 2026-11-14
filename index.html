@@ -34,7 +34,7 @@
   <!-- PC 상단 상태 바 -->
   <div class="hidden md:flex items-center gap-3 mb-3 bg-slate-900/90 border border-slate-800 px-4 py-2 rounded-full text-xs text-slate-300 shadow-lg">
     <img src="assets/icon.jpg" alt="호구컷 로고" class="w-6 h-6 rounded-lg object-cover">
-    <span><strong class="text-amber-400">호구컷 v2.7.1 정식 빌드</strong> — 🌐 실제 인터넷 주소창 브라우저 탑재 • 🏆 전체/주간(월~일) 누적 랭킹 • 🎯 알리 제품 직결</span>
+    <span><strong class="text-amber-400">호구컷 v2.8.0 정식 빌드</strong> — 🌐 실제 인터넷 주소창 브라우저 탑재 • 🏆 전체/주간(월~일) 누적 랭킹 • 🎯 알리 제품 직결</span>
   </div>
 
   <!-- 스마트폰 앱 프레임 -->
@@ -47,7 +47,7 @@
         <div>
           <div class="flex items-center gap-1.5">
             <span class="text-base font-black tracking-tight text-white">호구<span class="text-amber-400">컷</span></span>
-            <span class="text-[9px] bg-gradient-to-r from-red-500 to-amber-500 text-white font-extrabold px-1.5 py-0.5 rounded">v2.7.1</span>
+            <span class="text-[9px] bg-gradient-to-r from-red-500 to-amber-500 text-white font-extrabold px-1.5 py-0.5 rounded">v2.8.0</span>
           </div>
         </div>
       </div>
@@ -2917,6 +2917,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         if (imgUrl.includes('icon.jpg')) return resolveCategoryRepresentativeImage(titleOrKeyword);
         return imgUrl;
       }
+      if (imgUrl.includes('wsrv.nl/')) return imgUrl;
       if (/phinf\.pstatic\.net|daumcdn\.net|kakaocdn\.net|coupangcdn\.com|msscdn\.net|alicdn\.com/i.test(imgUrl)) {
         return `https://wsrv.nl/?url=${encodeURIComponent(imgUrl)}&default=${encodeURIComponent(imgUrl)}`;
       }
@@ -3559,7 +3560,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         ? [imgUrl]
         : [
             `https://wsrv.nl/?url=${encodeURIComponent(imgUrl)}&w=200&h=200&output=png`,
-            `/api/fetch?url=${encodeURIComponent(imgUrl)}`,
+            `${API_BASE_URL ? API_BASE_URL : ''}/api/fetch?url=${encodeURIComponent(imgUrl)}`,
             `https://corsproxy.io/?${encodeURIComponent(imgUrl)}`
           ];
 
@@ -4470,7 +4471,11 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       return false;
     }
 
-    const API_BASE_URL = (typeof window !== 'undefined' && window.HOGUCUT_API_BASE) || '';
+    const API_BASE_URL = (typeof window !== 'undefined' && window.HOGUCUT_API_BASE) || (
+      (typeof location !== 'undefined' && (location.hostname.endsWith('github.io') || location.protocol === 'file:'))
+        ? 'https://hogucut.vercel.app'
+        : ''
+    );
     const DEFAULT_OPERATOR_AFFILIATE_ID = '';
 
     function getAffiliatedAliUrl(targetUrl) {
@@ -7987,11 +7992,11 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
             const cleanQ = (q || '실시간 인기 쇼핑').trim();
             const titleEl = document.getElementById('pQueryTitle');
             if (titleEl) titleEl.innerText = cleanQ;
-            currentPortalProducts = getProductsForQuery(cleanQ, currentPortalKey, currentPortalShort);
+            currentPortalProducts = [];
             selectedIdx = 0;
-            renderProductCardsDom(currentPortalProducts);
-            if (currentPortalProducts.length > 0) {
-              notifySelectProduct(currentPortalProducts[0]);
+            const list = document.getElementById('pProductsList');
+            if (list) {
+              list.innerHTML = '<div style="padding:18px 12px;text-align:center;background:#fff;border:1.5px dashed #cbd5e1;border-radius:12px;color:#475569;font-size:12px;font-weight:700;">🔄 ' + (currentPortalShort || '네이버') + ' 실시간 상품 데이터를 크롤링하는 중...</div>';
             }
 
             lastRequestedPortalQuery = cleanQ;
@@ -8007,34 +8012,41 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
           window.addEventListener('message', function(ev) {
             const d = ev.data;
             if (!d || d.type !== 'HOGUCUT_PORTAL_ITEMS_RESULT') return;
-            if (d.query !== lastRequestedPortalQuery || !Array.isArray(d.items) || d.items.length === 0) return;
+            if (d.query !== lastRequestedPortalQuery) return;
+            if (!Array.isArray(d.items) || d.items.length === 0) {
+              const list = document.getElementById('pProductsList');
+              if (list) {
+                list.innerHTML = '<div style="padding:16px 12px;text-align:center;background:#fff;border:1.5px solid #fecaca;border-radius:12px;color:#991b1b;font-size:12px;line-height:1.5;">' +
+                  '<strong>⚠️ 실시간 쇼핑 데이터를 불러오지 못했습니다.</strong><br>' +
+                  '<span style="color:#64748b;font-size:11px;">네트워크 또는 서버 연결을 확인 후 다시 시도해 주세요.</span><br>' +
+                  '<button onclick="renderTop5Products(lastRequestedPortalQuery)" style="margin-top:8px;padding:6px 14px;background:#0f172a;color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">🔄 다시 불러오기</button>' +
+                '</div>';
+              }
+              return;
+            }
             const sName = currentPortalShort || '네이버';
-            d.items.slice(0, 5).forEach((liveIt, idx) => {
-              if (!currentPortalProducts[idx] || !liveIt) return;
+            currentPortalProducts = d.items.slice(0, 5).map((liveIt, idx) => {
               const cleanLiveTitle = String(liveIt.title || '').replace(/^\[.*?\]\s*/, '').trim();
-              if (cleanLiveTitle.length >= 3) {
-                currentPortalProducts[idx].title = '[' + sName + ' ' + (idx + 1) + '위] ' + cleanLiveTitle;
-                currentPortalProducts[idx].query = cleanLiveTitle;
-              }
-              if (Number(liveIt.price) > 0) {
-                currentPortalProducts[idx].price = Number(liveIt.price);
-                currentPortalProducts[idx].ali_price = Math.max(1900, Math.round((Number(liveIt.price) * 0.38) / 100) * 100);
-              }
-              if (liveIt.shipping !== undefined) {
-                currentPortalProducts[idx].ship = Number(liveIt.shipping) || 0;
-                currentPortalProducts[idx].shipping = Number(liveIt.shipping) || 0;
-              }
-              if (liveIt.image && liveIt.image.startsWith('http')) {
-                currentPortalProducts[idx].image = liveIt.image;
-              }
-              if (liveIt.link && liveIt.link.startsWith('http')) {
-                currentPortalProducts[idx].link = liveIt.link;
-                currentPortalProducts[idx]._krLiveVerified = true;
-              }
+              const shipVal = Number(liveIt.shipping || 0);
+              return {
+                title: '[' + sName + ' ' + (idx + 1) + '위] ' + cleanLiveTitle,
+                query: cleanLiveTitle,
+                price: Number(liveIt.price) || 0,
+                ship: shipVal,
+                shipping: shipVal,
+                mall: liveIt.mall || (sName + ' 쇼핑 ' + (idx + 1) + '위'),
+                image: (liveIt.image && liveIt.image.startsWith('http')) ? liveIt.image : ('https://tse2.mm.bing.net/th?q=' + encodeURIComponent(cleanLiveTitle) + '&w=300&h=300&c=7&rs=1&p=0'),
+                link: liveIt.link || '',
+                ali_url: '',
+                ali_title: '',
+                ali_price: 0,
+                _krLiveVerified: true
+              };
             });
+            selectedIdx = 0;
             renderProductCardsDom(currentPortalProducts);
-            if (currentPortalProducts[selectedIdx]) {
-              notifySelectProduct(currentPortalProducts[selectedIdx]);
+            if (currentPortalProducts[0]) {
+              notifySelectProduct(currentPortalProducts[0]);
             }
           });
 
@@ -8063,7 +8075,8 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
                 mall: p.mall || (currentPortalShort + ' 쇼핑'),
                 ali_url: p.ali_url || '',
                 ali_title: p.ali_title || '',
-                ali_price: p.ali_price || 0
+                ali_price: p.ali_price || 0,
+                _krLiveVerified: Boolean(p._krLiveVerified)
               }
             }, '*');
           }
@@ -8085,7 +8098,8 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
                   mall: p.mall || (currentPortalShort + ' 쇼핑'),
                   ali_url: p.ali_url || '',
                   ali_title: p.ali_title || '',
-                  ali_price: Number(p.ali_price) || 0
+                  ali_price: Number(p.ali_price) || 0,
+                  _krLiveVerified: Boolean(p._krLiveVerified)
                 }
               }, '*');
             }
@@ -8757,18 +8771,26 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         const portal = (msg.portal || 'naver').toLowerCase();
         if (q) {
           fetchLiveShoppingItemsFast(q, portal).then(items => {
-            if (items && items.length > 0) {
-              const frame = document.getElementById('realWebFrame');
-              if (frame && frame.contentWindow) {
-                frame.contentWindow.postMessage({
-                  type: 'HOGUCUT_PORTAL_ITEMS_RESULT',
-                  query: q,
-                  portal: portal,
-                  items: items.slice(0, 5)
-                }, '*');
-              }
+            const frame = document.getElementById('realWebFrame');
+            if (frame && frame.contentWindow) {
+              frame.contentWindow.postMessage({
+                type: 'HOGUCUT_PORTAL_ITEMS_RESULT',
+                query: q,
+                portal: portal,
+                items: Array.isArray(items) ? items.slice(0, 5) : []
+              }, '*');
             }
-          }).catch(() => {});
+          }).catch(() => {
+            const frame = document.getElementById('realWebFrame');
+            if (frame && frame.contentWindow) {
+              frame.contentWindow.postMessage({
+                type: 'HOGUCUT_PORTAL_ITEMS_RESULT',
+                query: q,
+                portal: portal,
+                items: []
+              }, '*');
+            }
+          });
         }
       } else if (msg.type === 'HOGUCUT_INSPECT_PORTAL_PRODUCT' && msg.product) {
         const p = msg.product;
@@ -8969,23 +8991,61 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         document.getElementById('quickSamples').classList.add('hidden');
         document.getElementById('resultBox').classList.add('hidden');
         document.getElementById('loadingBox').classList.remove('hidden');
-        document.getElementById('loadingStepText').innerText = `선택하신 '${cleanQ.slice(0, 18)}...' 상품과 동일한 알리익스프레스 직구 상품을 찾는 중...`;
-        document.getElementById('ocrProgressBar').style.width = '100%';
+        document.getElementById('loadingStepText').innerText = `선택하신 '${cleanQ.slice(0, 18)}...' 상품과 동일한 알리익스프레스 직구 상품을 실시간 검색·대조 중...`;
+        document.getElementById('ocrProgressBar').style.width = '45%';
 
         const krTot = targetPrice + targetShip;
         const isBrand = /유그린|ugreen|앤커|anker|투키|toocki|베이스어스|baseus|샤오미/i.test(targetTitle);
-        let aliPrice = Number(p.ali_price) || (matchedModel && matchedModel.aliPrice ? matchedModel.aliPrice : (isBrand ? Math.round((targetPrice * 0.48) / 100) * 100 : Math.max(2000, Math.round((targetPrice * 0.35) / 100) * 100)));
-        let aliTitle = p.ali_title || (matchedModel && matchedModel.aliTitle ? matchedModel.aliTitle : `[알리 직구 대조] ${cleanQ}`);
-        let aliImg = targetImage;
-        let aliDirectUrl = targetAliUrl;
+        const aliSearchUrl = 'https://ko.aliexpress.com/w/wholesale-' + encodeURIComponent(cleanQ) + '.html?SortType=total_tranpro_desc';
 
-        const saved = Math.max(0, krTot - aliPrice);
-        const pct = krTot > 0 && krTot > aliPrice ? Math.max(5, Math.min(96, Math.round((saved / krTot) * 100))) : 0;
+        let aliRes = null;
+        try {
+          aliRes = await resolveAliProduct(cleanQ, targetTitle, targetImage, krTot);
+        } catch (e) {}
+
+        document.getElementById('ocrProgressBar').style.width = '100%';
+
+        let aliPrice = 0;
+        let aliTitle = '';
+        let aliImg = '';
+        let aliDirectUrl = aliSearchUrl;
+        let aliVerified = false;
+        let simScore = 0;
+        let reasonText = '';
+
+        if (aliRes && aliRes.id) {
+          aliPrice = Number(aliRes.price) || 0;
+          aliTitle = aliRes.title || cleanQ;
+          aliImg = aliRes.image || '';
+          aliDirectUrl = aliRes.url || (`https://ko.aliexpress.com/item/${aliRes.id}.html`);
+          aliVerified = true;
+          simScore = Number(aliRes.visualSim) > 0 ? Number(aliRes.visualSim) : 78;
+        } else {
+          aliPrice = 0;
+          aliTitle = `알리익스프레스 자동 매칭 상품 없음 ('${cleanQ.slice(0, 20)}' 직접 검색)`;
+          aliImg = '';
+          aliDirectUrl = aliSearchUrl;
+          aliVerified = false;
+          simScore = 0;
+        }
+
+        const saved = (aliVerified && aliPrice > 0) ? Math.max(0, krTot - aliPrice) : 0;
+        const pct = (aliVerified && aliPrice > 0 && krTot > 0 && krTot > aliPrice)
+          ? Math.max(1, Math.min(96, Math.round((saved / krTot) * 100)))
+          : 0;
+
+        if (aliVerified && aliPrice > 0) {
+          reasonText = saved > 0
+            ? `[실시간 크롤링 대조] 선택하신 '${cleanQ}'(${krTot.toLocaleString()}원)와 알리익스프레스 실제 검색 상품 '${aliTitle.slice(0, 35)}'(${aliPrice.toLocaleString()}원)을 비교한 결과, 약 ${saved.toLocaleString()}원(이득 지수 ${pct}%) 절약 가능합니다.`
+            : `[실시간 크롤링 대조] 선택하신 '${cleanQ}'(${krTot.toLocaleString()}원)와 알리익스프레스 실제 검색 상품(${aliPrice.toLocaleString()}원)을 비교한 결과, 국내 쇼핑몰이 더 저렴하거나 비슷한 수준입니다.`;
+        } else {
+          reasonText = `[실시간 대조 안내] '${cleanQ}' 상품과 일치하는 알리익스프레스 직구 상품을 자동으로 찾지 못했습니다. 아래 [알리 상품 바로가기] 버튼을 눌러 직접 검색 결과를 확인해 주세요.`;
+        }
 
         const data = {
-          is_verified: isAliVerified,
+          is_verified: aliVerified,
           _krLiveVerified: isDomVerified,
-          _aliLiveVerified: isAliVerified,
+          _aliLiveVerified: aliVerified,
           _keepSelectedPrice: true,
           platform: targetMall,
           kr_title: targetTitle,
@@ -8998,15 +9058,15 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
           ali_price: aliPrice,
           ali_image: aliImg,
           ali_direct_url: aliDirectUrl,
-          ali_search_url: 'https://ko.aliexpress.com/w/wholesale-' + encodeURIComponent(cleanQ) + '.html?SortType=total_tranpro_desc',
+          ali_search_url: aliSearchUrl,
           ali_url: aliDirectUrl,
           saved_amount: saved,
           risk_score: pct,
-          similarity: 98,
+          similarity: simScore,
           is_brand: isBrand,
           keyword: p.query || cleanQ,
-          _aliCandidateIdx: modelIdx,
-          reason: `[실시간 직구 대조] 방금 선택하신 '${cleanQ}' 상품(${targetPrice.toLocaleString()}원${targetShip > 0 ? ' + 배송비 ' + targetShip.toLocaleString() + '원' : ', 무료배송'})을 알리익스프레스 동일/유사 제품 직구가(약 ${aliPrice.toLocaleString()}원)와 비교한 결과 ${saved.toLocaleString()}원(이득 지수 ${pct}%)을 아낄 수 있습니다.`
+          _aliCandidateIdx: 0,
+          reason: reasonText
         };
         data._searchedRawUrl = targetTitle;
         currentResultData = data;
