@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hogucut-v2.8.0';
+const CACHE_NAME = 'hogucut-v2.8.1';
 
 const PRECACHE_ASSETS = [
   './',

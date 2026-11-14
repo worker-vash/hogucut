@@ -34,7 +34,7 @@
   <!-- PC 상단 상태 바 -->
   <div class="hidden md:flex items-center gap-3 mb-3 bg-slate-900/90 border border-slate-800 px-4 py-2 rounded-full text-xs text-slate-300 shadow-lg">
     <img src="assets/icon.jpg" alt="호구컷 로고" class="w-6 h-6 rounded-lg object-cover">
-    <span><strong class="text-amber-400">호구컷 v2.8.0 정식 빌드</strong> — 🌐 실제 인터넷 주소창 브라우저 탑재 • 🏆 전체/주간(월~일) 누적 랭킹 • 🎯 알리 제품 직결</span>
+    <span><strong class="text-amber-400">호구컷 v2.8.1 정식 빌드</strong> — 🌐 실제 인터넷 주소창 브라우저 탑재 • 🏆 전체/주간(월~일) 누적 랭킹 • 🎯 알리 제품 직결</span>
   </div>
 
   <!-- 스마트폰 앱 프레임 -->
@@ -47,7 +47,7 @@
         <div>
           <div class="flex items-center gap-1.5">
             <span class="text-base font-black tracking-tight text-white">호구<span class="text-amber-400">컷</span></span>
-            <span class="text-[9px] bg-gradient-to-r from-red-500 to-amber-500 text-white font-extrabold px-1.5 py-0.5 rounded">v2.8.0</span>
+            <span class="text-[9px] bg-gradient-to-r from-red-500 to-amber-500 text-white font-extrabold px-1.5 py-0.5 rounded">v2.8.1</span>
           </div>
         </div>
       </div>
@@ -3750,7 +3750,15 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         if (img.startsWith('//')) img = 'https:' + img;
 
         let price = 0;
-        // 1순위: pdp_npi 파라미터의 실제 결제 판매가 (!KRW!원가!실제판매가!)
+        const isUsdChunk = /(?:!|%21)USD(?:!|%21)|"currency(?:Code)?"\s*:\s*"USD"|US\s*\$/i.test(itemChunk);
+        const toKrw = (val, forceUsd = false) => {
+          const num = parseFloat(String(val || '').replace(/,/g, ''));
+          if (!num || !isFinite(num)) return 0;
+          if (forceUsd || isUsdChunk || (num > 0 && num < 500)) return Math.round(num * 1380);
+          return Math.round(num);
+        };
+
+        // 1순위: pdp_npi 파라미터의 실제 결제 판매가 (!KRW!원가!실제판매가! 또는 !USD!원가!실제판매가!)
         // AliExpress는 비로그인 검색 결과의 salePrice에 '신규고객 웰컴 특가'나 '코인 특가'(예: 1,250원)를 노출하지만,
         // 실제 상품 페이지 이동 시 결제되는 진짜 실구매가(예: 3,100원)는 pdp_npi 파라미터 2번째 값에 정확히 기록됨
         const npiM = itemChunk.match(/(?:!|%21)KRW(?:!|%21)(\d+)(?:!|%21)(\d+)/);
@@ -3760,20 +3768,27 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
             price = npiSale;
           }
         }
+        if (!price) {
+          const npiUsdM = itemChunk.match(/(?:!|%21)USD(?:!|%21)([0-9.]+)(?:!|%21)([0-9.]+)/);
+          if (npiUsdM) {
+            const usdSale = parseFloat(npiUsdM[2]);
+            if (usdSale > 0) price = Math.round(usdSale * 1380);
+          }
+        }
 
         // 2순위: 현재 상품 prices.salePrice (실제 판매 할인가격 minPrice / formattedPrice)
         if (!price) {
-          const spM = itemChunk.match(/"salePrice"\s*:\s*\{[^}]*?"formattedPrice"\s*:\s*"[^"\d]*([0-9,]+)"/) ||
+          const spM = itemChunk.match(/"salePrice"\s*:\s*\{[^}]*?"formattedPrice"\s*:\s*"[^"\d]*([0-9,.]+)"/) ||
                       itemChunk.match(/"salePrice"\s*:\s*\{[^}]*?"minPrice"\s*:\s*([0-9.]+)/);
           if (spM) {
-            price = Math.round(parseFloat((spM[1] || '').replace(/,/g, '')));
+            price = toKrw(spM[1]);
           }
         }
 
         // 3순위: 현재 상품 자체의 salePriceAmount (utLogMap 내 실제 판매가, 이전 상품으로 거슬러 올라가지 않음)
         if (!price) {
           const spaM = itemChunk.match(/"salePriceAmount"\s*:\s*"([0-9.]+)"/);
-          if (spaM) price = Math.round(parseFloat(spaM[1]));
+          if (spaM) price = toKrw(spaM[1]);
         }
 
         // 4순위: 1개 숫자만 있는 pdp_npi 파라미터 fallback
@@ -3785,14 +3800,14 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         // 5순위: 현재 상품 prices.originalPrice (할인 없는 경우 정가)
         if (!price) {
           const opM = itemChunk.match(/"originalPrice"\s*:\s*\{[^}]*?"minPrice"\s*:\s*([0-9.]+)/) ||
-                      itemChunk.match(/"originalPrice"\s*:\s*\{[^}]*?"formattedPrice"\s*:\s*"[^"\d]*([0-9,]+)"/);
-          if (opM) price = Math.round(parseFloat((opM[1] || '').replace(/,/g, '')));
+                      itemChunk.match(/"originalPrice"\s*:\s*\{[^}]*?"formattedPrice"\s*:\s*"[^"\d]*([0-9,.]+)"/);
+          if (opM) price = toKrw(opM[1]);
         }
 
         // 6순위: itemChunk 내부 formattedPrice 또는 minPrice fallback
         if (!price) {
-          const fpM = itemChunk.match(/"formattedPrice"\s*:\s*"[^"\d]*([0-9,]+)"/) || itemChunk.match(/"minPrice"\s*:\s*([0-9.]+)/);
-          if (fpM) price = Math.round(parseFloat(fpM[1].replace(/,/g, '')));
+          const fpM = itemChunk.match(/"formattedPrice"\s*:\s*"[^"\d]*([0-9,.]+)"/) || itemChunk.match(/"minPrice"\s*:\s*([0-9.]+)/);
+          if (fpM) price = toKrw(fpM[1]);
         }
 
         if (title && title.length >= 4) {
@@ -4752,10 +4767,8 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         try {
           const fetchEndpoint = API_BASE_URL ? `${API_BASE_URL}/api/fetch` : '/api/fetch';
           const lr = await fetchWithTimeout(`${fetchEndpoint}?url=${encodeURIComponent(targetUrl)}`, 9000);
-          if (lr.ok) {
-            const lh = await lr.text();
-            if (lh && lh.length > 400 && !lh.includes('[에러] 에러페이지 - 시스템오류')) return lh;
-          }
+          const lh = await lr.text();
+          if (lh && lh.length > 1000 && !lh.includes('[에러] 에러페이지 - 시스템오류') && !lh.includes('Missing url parameter')) return lh;
         } catch (e) {}
       }
 
