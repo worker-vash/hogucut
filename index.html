@@ -34,7 +34,7 @@
   <!-- PC 상단 상태 바 -->
   <div class="hidden md:flex items-center gap-3 mb-3 bg-slate-900/90 border border-slate-800 px-4 py-2 rounded-full text-xs text-slate-300 shadow-lg">
     <img src="assets/icon.jpg" alt="호구컷 로고" class="w-6 h-6 rounded-lg object-cover">
-    <span><strong class="text-amber-400">호구컷 v1.0.0 정식 빌드</strong> — 🌐 실제 인터넷 주소창 브라우저 탑재 • 🏆 전체/주간(월~일) 누적 랭킹 • 🎯 알리 제품 직결</span>
+    <span><strong class="text-amber-400">호구컷 v1.0.1 정식 빌드</strong> — 🌐 실제 인터넷 주소창 브라우저 탑재 • 🏆 전체/주간(월~일) 누적 랭킹 • 🎯 알리 제품 직결</span>
   </div>
 
   <!-- 스마트폰 앱 프레임 -->
@@ -47,16 +47,13 @@
         <div>
           <div class="flex items-center gap-1.5">
             <span class="text-base font-black tracking-tight text-white">호구<span class="text-amber-400">컷</span></span>
-            <span class="text-[9px] bg-gradient-to-r from-red-500 to-amber-500 text-white font-extrabold px-1.5 py-0.5 rounded">v1.0.0</span>
+            <span class="text-[9px] bg-gradient-to-r from-red-500 to-amber-500 text-white font-extrabold px-1.5 py-0.5 rounded">v1.0.1</span>
           </div>
         </div>
       </div>
       <div class="flex items-center gap-2">
         <button onclick="switchTab('browser')" class="text-[11px] bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 px-2.5 py-1 rounded-full font-bold transition flex items-center gap-1">
           <i class="fa-solid fa-earth-asia"></i> 인터넷 창 열기
-        </button>
-        <button onclick="openAffiliateSettings()" title="제휴 수익(어필리에이트) 설정" class="text-slate-400 hover:text-amber-400 p-1 text-sm cursor-pointer transition">
-          <i class="fa-solid fa-coins"></i>
         </button>
         <a href="privacy.html" target="_blank" title="개인정보처리방침" class="text-slate-400 hover:text-white p-1 text-sm">
           <i class="fa-solid fa-shield-halved"></i>
@@ -10579,7 +10576,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       prepareProductThumbnails();
       navigateToUrl('https://www.naver.com', false);
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js?v=1.0.0').catch(() => {});
+        navigator.serviceWorker.register('sw.js?v=1.0.1').catch(() => {});
       }
       const params = new URLSearchParams(window.location.search);
       const action = params.get('action');
