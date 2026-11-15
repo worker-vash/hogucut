@@ -3374,7 +3374,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       '가습기', '온풍기', '전기요', '탄소매트', '요가매트', '매트', '에어프라이어', '커피머신', '전기포트', '청소기', '음식물처리기', '믹서기', '블렌더',
       '텀블러', '하네스', '가슴줄', '장난감',
       '조명등', '무드등', '취침등', '수면등', '조명', '램프', '라이트', '스탠드', '랜턴',
-      '컨트롤러', '게임패드', '조이패드', '조이스틱', '키보드', '마우스', '키캡', '손목받침대', '팜레스트'
+      '컨트롤러', '게임패드', '조이패드', '조이스틱', '키보드', '마우스', '키캡', '손목받침대', '팜레스트', '팔걸이', '팔꿈치', '보호대'
     ];
 
     const SYNONYM_CLUSTERS = [
@@ -3414,10 +3414,10 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       { name: 'pet_toy', rep: '고양이 장난감', words: ['장난감', '낚시대', '캣닢', 'toy', 'cat toy', 'teaser'] },
       { name: 'selfie_tripod', rep: '셀카봉 삼각대', words: ['셀카봉', '삼각대셀카봉', '블루투스셀카봉', '미니삼각대', '삼각대', 'selfie stick', 'tripod'] },
       { name: 'lamp_light', rep: 'LED 무드등', words: ['무드등', '조명등', '조명', '취침등', '수면등', '야간조명', '야간등', '램프', '라이트', '스탠드조명', '스탠드', '랜턴', '침실등', '아이방등', '인테리어조명', '센서등', 'lamp', 'night light', 'lantern', 'light bar'] },
-      { name: 'game_controller', rep: '무선 게임 컨트롤러', words: ['컨트롤러', '게임패드', '조이패드', '조이스틱', '무선컨트롤러', '엑박패드', '패드', 'controller', 'gamepad', 'joystick'] },
+      { name: 'game_controller', rep: '무선 게임 컨트롤러', words: ['컨트롤러', '게임패드', '조이패드', '조이스틱', '무선컨트롤러', '엑박패드', 'controller', 'gamepad', 'joystick'] },
       { name: 'keyboard', rep: '기계식 키보드', words: ['키보드', '기계식키보드', '게이밍키보드', '무선키보드', '블루투스키보드', 'keyboard'] },
       { name: 'mouse', rep: '무선 마우스', words: ['마우스', '게이밍마우스', '무선마우스', '버티컬마우스', 'mouse'] },
-      { name: 'wrist_rest', rep: '손목받침대', words: ['손목받침대', '팜레스트', '손목쿠션', '손목보호대', '마우스패드', 'wrist rest', 'palm rest', 'mouse pad'] }
+      { name: 'wrist_rest', rep: '책상 팔걸이 손목받침대', words: ['손목받침대', '팜레스트', '손목쿠션', '손목보호대', '팔걸이', '팔꿈치', '보호대', '마우스패드', 'armrest', 'elbow', 'wrist rest', 'palm rest', 'mouse pad'] }
     ];
 
     const ONE_CHAR_KEEP = new Set(['폰', '링', '줄', '탭', '펜', '컵', '캡', '백', '잭', '핀', '케', '선', '등']);
@@ -3462,17 +3462,17 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       const devicePrefix = extractDevicePrefix(cleaned);
 
       let brandToken = '';
-      if (/\b(유그린|ugreen)\b/i.test(cleaned)) brandToken = 'UGREEN';
-      else if (/\b(투키|toocki)\b/i.test(cleaned)) brandToken = 'Toocki';
-      else if (/\b(베이스어스|baseus)\b/i.test(cleaned)) brandToken = 'Baseus';
-      else if (/\b(앤커|anker)\b/i.test(cleaned)) brandToken = 'Anker';
-      else if (/\b(샤오미|xiaomi|미지아|mijia)\b/i.test(cleaned)) brandToken = 'Xiaomi';
+      if (/(유그린|\bugreen\b)/i.test(cleaned)) brandToken = 'UGREEN';
+      else if (/(투키|\btoocki\b)/i.test(cleaned)) brandToken = 'Toocki';
+      else if (/(베이스어스|\bbaseus\b)/i.test(cleaned)) brandToken = 'Baseus';
+      else if (/(앤커|\banker\b)/i.test(cleaned)) brandToken = 'Anker';
+      else if (/(샤오미|\bxiaomi\b|미지아|\bmijia\b)/i.test(cleaned)) brandToken = 'Xiaomi';
       else if (/\b(qcy)\b/i.test(cleaned)) brandToken = 'QCY';
-      else if (/\b(오리코|orico)\b/i.test(cleaned)) brandToken = 'Orico';
-      else if (/\b(에세거|essager)\b/i.test(cleaned)) brandToken = 'Essager';
-      else if (/\b(레노버|lenovo)\b/i.test(cleaned)) brandToken = 'Lenovo';
-      else if (/\b(삼성|samsung)\b/i.test(cleaned)) brandToken = 'Samsung';
-      else if (/\b(애플|apple)\b/i.test(cleaned)) brandToken = 'Apple';
+      else if (/(오리코|\borico\b)/i.test(cleaned)) brandToken = 'Orico';
+      else if (/(에세거|\bessager\b)/i.test(cleaned)) brandToken = 'Essager';
+      else if (/(레노버|\blenovo\b)/i.test(cleaned)) brandToken = 'Lenovo';
+      else if (/(삼성|\bsamsung\b)/i.test(cleaned)) brandToken = 'Samsung';
+      else if (/(애플|\bapple\b)/i.test(cleaned)) brandToken = 'Apple';
 
       const techSpecs = [];
       const specModels = cleaned.match(/\b([A-Z]{1,4}[-_]?\d{3,5}[A-Z\d]*)\b/gi) || [];
@@ -4033,7 +4033,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
 
       // 1-I) 노트북 백팩 vs 소형 슬링백/크로스백 형태 불일치 차단
       if (/백팩|배낭|backpack/i.test(kr)) {
-        if (/슬링백|크로스백|메신저백|힙색/i.test(t) && !/백팩|backpack/i.test(t)) return -9999;
+        if (/슬링백|크로스백|메신저백|힙색|crossbody|sling\s*bag|messenger\s*bag|chest\s*bag/i.test(t) && !/백팩|backpack/i.test(t)) return -9999;
       }
 
       if (/신발|운동화|스니커즈|샌들|부츠|구두|슬리퍼|워커|단화|아동화/i.test(kr)) {
@@ -4101,8 +4101,8 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         let hitCluster = '';
         if (!hit) {
           for (const cl of SYNONYM_CLUSTERS) {
-            if (cl.words.some(w => w.trim().toLowerCase() === lcw || lcw.includes(w.trim()))) {
-              if (cl.words.some(w => tNoSpace.includes(w.trim().toLowerCase()))) {
+            if (cl.words.some(w => w.replace(/\s+/g, '').toLowerCase() === lcw || lcw.includes(w.replace(/\s+/g, '').toLowerCase()))) {
+              if (cl.words.some(w => tNoSpace.includes(w.replace(/\s+/g, '').toLowerCase()))) {
                 hit = true;
                 hitCluster = cl.name;
                 break;
@@ -4499,34 +4499,23 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         }
       }
 
-      // 2순위: 카테고리 내 다른 모델로 순환 후 실시간 알리 매칭 실행
-      const targetKey = d.keyword || d.kr_title || d._aliQuery || '';
-      const cat = resolveUniversalCategory(targetKey);
-      const models = (cat && cat.models && cat.models.length > 0) ? cat.models : [];
-
-      const currentIdx = typeof d._aliCandidateIdx === 'number' ? d._aliCandidateIdx : 0;
-      const nextIdx = models.length > 0 ? ((currentIdx + 1) % models.length) : 0;
-      d._aliCandidateIdx = nextIdx;
-
-      if (models.length > 0) {
-        const m = models[nextIdx];
-        const isVerifiedAli = Boolean(m.aliId && VERIFIED_REAL_ALI_IDS.has(String(m.aliId)));
-        const nextDirectUrl = ensureSpecificAliItemUrl(isVerifiedAli ? ('https://ko.aliexpress.com/item/' + m.aliId + '.html') : '', m.name, isVerifiedAli);
-        d._aliLiveVerified = isVerifiedAli;
-        d.ali_url = nextDirectUrl;
-        d.ali_direct_url = nextDirectUrl;
-        d.ali_title = m.aliTitle || ('[알리 ' + (nextIdx + 1) + '위 직구 대조] ' + m.name);
-        if (!d._userPriceEdited && m.aliPrice > 0) {
-          d.ali_price = m.aliPrice;
+      // 2순위: 가짜/고정 모델 돌려막기 금지 — 실시간 후보 풀이 없으면 캐시를 우회해 실시간 재검색 실행
+      if (st) st.innerText = '🔄 추가 알리 실시간 상품을 다시 찾는 중...';
+      try {
+        const fresh = await resolveAliProduct(d._aliQuery || d.keyword || d.kr_title, d.kr_title, d.kr_image, d.kr_total || d.kr_price, true);
+        if (fresh && Array.isArray(fresh._candidatePool) && fresh._candidatePool.length > 0) {
+          d._aliCandidates = fresh._candidatePool;
+          d._aliCandidateIdx = fresh._candidatePool.length > 1 ? 1 : 0;
+          const cand = d._aliCandidates[d._aliCandidateIdx];
+          d._keepSelectedPrice = false;
+          applyResolvedAliProduct(d, cand);
+          if (st) st.innerText = `✅ 알리 실시간 후보(${d._aliCandidateIdx + 1}/${d._aliCandidates.length}번째) 매칭 완료!`;
+          showToastMsg(`🔄 알리 실시간 후보 상품(약 ${(d.ali_price || 0).toLocaleString()}원)으로 다시 매칭했습니다!`);
+          return;
         }
-        syncResultMetricsAndReason(d);
-        renderResult(d);
-        saveHistoryAndRanking(d);
-        if (st) {
-          st.innerText = `✅ 다른 알리 추천 후보(${nextIdx + 1}/${models.length}번째) 매칭 완료!`;
-        }
-        showToastMsg(`🔄 알리 ${nextIdx + 1}번째 후보 상품(약 ${(d.ali_price || 0).toLocaleString()}원)으로 다시 매칭했습니다!`);
-      }
+      } catch (e) {}
+
+      showToastMsg('ℹ️ 추가 실시간 매칭 후보가 없어 알리 직접 검색 페이지를 확인해 주세요.');
     }
 
     function openAliSearchListPage(event) {
@@ -9519,9 +9508,13 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         const badgeColor = rankNum === 1 ? 'bg-red-600 text-white' :
                            rankNum === 2 ? 'bg-amber-500 text-black' :
                            rankNum === 3 ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-slate-300';
-        const ratio = item.ali_price > 0 ? (item.kr_price / item.ali_price).toFixed(1) : '2.5';
+        const krP = Number(item.kr_price) || 0;
+        const aliP = Number(item.ali_price) || 0;
+        const savedP = Number(item.saved !== undefined ? item.saved : item.saved_amount) || 0;
+        const cnt = Number(item.count) || 1;
+        const ratio = aliP > 0 ? (krP / aliP).toFixed(1) : '2.5';
         const safeId = (item.id || '').replace(/'/g, "\\'");
-        const safeTitle = item.title.replace(/'/g, "\\'");
+        const safeTitle = (item.title || '상품').replace(/'/g, "\\'");
 
         return `
           <div onclick="openSavedRankingItem('${safeId}', '${safeTitle}')" class="p-3 bg-slate-900/90 hover:bg-slate-800 border ${item.is_new ? 'border-amber-500/50' : 'border-slate-800'} rounded-2xl flex items-center justify-between cursor-pointer transition">
@@ -9529,19 +9522,19 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
               <span class="w-6 h-6 rounded-full ${badgeColor} text-xs font-black flex items-center justify-center shrink-0">${rankNum}</span>
               <div class="min-w-0">
                 <div class="flex items-center gap-1.5">
-                  <span class="text-[9px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded font-bold shrink-0">${item.platform}</span>
+                  <span class="text-[9px] bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded font-bold shrink-0">${item.platform || '국내 쇼핑몰'}</span>
                   ${item.is_seed ? '<span class="text-[9px] bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded font-extrabold shrink-0">검증 사례</span>' : '<span class="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded font-extrabold shrink-0">내 검증</span>'}
                   ${item.is_new ? '<span class="text-[9px] bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded font-extrabold shrink-0">실시간 반영</span>' : ''}
-                  <p class="text-xs font-bold text-white truncate">${item.title}</p>
+                  <p class="text-xs font-bold text-white truncate">${item.title || '상품'}</p>
                 </div>
                 <p class="text-[11px] text-slate-400 mt-0.5">
-                  국내 ${item.kr_price.toLocaleString()}원 ➔ <strong class="text-amber-400">알리 ${item.ali_price.toLocaleString()}원 (${ratio}배)</strong>
+                  국내 ${krP.toLocaleString()}원 ➔ <strong class="text-amber-400">알리 ${aliP.toLocaleString()}원 (${ratio}배)</strong>
                 </p>
               </div>
             </div>
             <div class="text-right shrink-0 ml-2">
-              <span class="block text-[11px] font-black text-emerald-400">-${item.saved.toLocaleString()}원</span>
-              <span class="text-[9px] text-slate-500">${isWeekly ? '이번주 ' : '누적 '}${item.count}회 검거</span>
+              <span class="block text-[11px] font-black text-emerald-400">-${savedP.toLocaleString()}원</span>
+              <span class="text-[9px] text-slate-500">${isWeekly ? '이번주 ' : '누적 '}${cnt}회 검거</span>
             </div>
           </div>
         `;
