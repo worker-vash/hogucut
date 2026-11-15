@@ -34,7 +34,7 @@
   <!-- PC 상단 상태 바 -->
   <div class="hidden md:flex items-center gap-3 mb-3 bg-slate-900/90 border border-slate-800 px-4 py-2 rounded-full text-xs text-slate-300 shadow-lg">
     <img src="assets/icon.jpg" alt="호구컷 로고" class="w-6 h-6 rounded-lg object-cover">
-    <span><strong class="text-amber-400">호구컷 v2.8.1 정식 빌드</strong> — 🌐 실제 인터넷 주소창 브라우저 탑재 • 🏆 전체/주간(월~일) 누적 랭킹 • 🎯 알리 제품 직결</span>
+    <span><strong class="text-amber-400">호구컷 v1.0.0 정식 빌드</strong> — 🌐 실제 인터넷 주소창 브라우저 탑재 • 🏆 전체/주간(월~일) 누적 랭킹 • 🎯 알리 제품 직결</span>
   </div>
 
   <!-- 스마트폰 앱 프레임 -->
@@ -47,7 +47,7 @@
         <div>
           <div class="flex items-center gap-1.5">
             <span class="text-base font-black tracking-tight text-white">호구<span class="text-amber-400">컷</span></span>
-            <span class="text-[9px] bg-gradient-to-r from-red-500 to-amber-500 text-white font-extrabold px-1.5 py-0.5 rounded">v2.8.1</span>
+            <span class="text-[9px] bg-gradient-to-r from-red-500 to-amber-500 text-white font-extrabold px-1.5 py-0.5 rounded">v1.0.0</span>
           </div>
         </div>
       </div>
@@ -3071,8 +3071,12 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       if (event) event.preventDefault();
       const d = currentResultData;
       const rawTitle = (d && (d.kr_title || d.keyword)) || (document.getElementById('urlInput') && document.getElementById('urlInput').value) || '';
-      const isLive = Boolean(d && d._krLiveVerified);
-      const targetUrl = ensureSpecificDomesticItemUrl((d && d.kr_url) || '', rawTitle, isLive);
+      let rawUrl = (d && d.kr_url) || '';
+      const imgCatMatch = rawUrl && rawUrl.match(/\/catalog\/(\d+)/i);
+      const isImgDerivedCatalog = Boolean(imgCatMatch && d && d.kr_image && new RegExp('main_\\d+/' + imgCatMatch[1] + '\\.').test(d.kr_image));
+      if (isImgDerivedCatalog) rawUrl = '';
+      const isLive = Boolean(!isImgDerivedCatalog && d && d._krLiveVerified);
+      const targetUrl = ensureSpecificDomesticItemUrl(rawUrl, rawTitle, isLive);
       const win = window.open(targetUrl, '_blank', 'noreferrer,noopener');
       if (win) win.opener = null;
       return false;
@@ -9061,8 +9065,11 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         const targetMall = p.mall || '네이버 쇼핑 1위';
 
         const rawDomLink = p.link || p.url || (matchedModel ? matchedModel.domLink : '');
-        const isDomVerified = Boolean(p._krLiveVerified || isVerifiedDomesticProductUrl(rawDomLink));
-        const targetDomesticUrl = ensureSpecificDomesticItemUrl(rawDomLink, targetTitle, isDomVerified);
+        const imgCatMatch = rawDomLink && rawDomLink.match(/\/catalog\/(\d+)/i);
+        const isImgDerivedCatalog = Boolean(imgCatMatch && p.image && new RegExp('main_\\d+/' + imgCatMatch[1] + '\\.').test(p.image));
+        const safeRawDomLink = isImgDerivedCatalog ? '' : rawDomLink;
+        const isDomVerified = Boolean(!isImgDerivedCatalog && (p._krLiveVerified || isVerifiedDomesticProductUrl(safeRawDomLink)));
+        const targetDomesticUrl = ensureSpecificDomesticItemUrl(safeRawDomLink, targetTitle, isDomVerified);
 
         const rawAliId = matchedModel && matchedModel.aliId ? String(matchedModel.aliId) : '';
         const isAliVerified = Boolean(p._aliLiveVerified || (rawAliId && VERIFIED_REAL_ALI_IDS.has(rawAliId)));
@@ -10572,7 +10579,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       prepareProductThumbnails();
       navigateToUrl('https://www.naver.com', false);
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js?v=2.8.1').catch(() => {});
+        navigator.serviceWorker.register('sw.js?v=1.0.0').catch(() => {});
       }
       const params = new URLSearchParams(window.location.search);
       const action = params.get('action');
