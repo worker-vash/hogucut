@@ -444,6 +444,75 @@ module.exports = async function handler(req, res) {
     }
   }
 
+  // 0-B. 알리익스프레스 공식 어필리에이트 상품 검색 API (?aliQuery=...)
+  if (req.query.aliQuery) {
+    const aliQuery = String(req.query.aliQuery).trim();
+    const appKey = process.env.ALI_APP_KEY || '560630';
+    const appSecret = process.env.ALI_APP_SECRET || '';
+    const trackingId = process.env.ALI_TRACKING_ID || 'hogucut';
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+
+    if (!appSecret || !aliQuery) {
+      return res.status(200).send(JSON.stringify({ ok: false, items: [] }));
+    }
+
+    try {
+      const apiName = 'aliexpress.affiliate.product.query';
+      const signParams = {
+        app_key: appKey,
+        keywords: aliQuery,
+        page_no: '1',
+        page_size: '20',
+        ship_to_country: 'KR',
+        sign_method: 'sha256',
+        sort: 'LAST_VOLUME_DESC',
+        target_currency: 'KRW',
+        target_language: 'KO',
+        timestamp: Date.now().toString(),
+        tracking_id: trackingId
+      };
+      const sorted = Object.keys(signParams).sort();
+      const baseString = apiName + sorted.map(k => k + signParams[k]).join('');
+      const sign = crypto.createHmac('sha256', appSecret).update(baseString).digest('hex').toUpperCase();
+      const body = new URLSearchParams({ method: apiName, ...signParams, sign }).toString();
+
+      const apiRes = await fetch('https://api-sg.aliexpress.com/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' },
+        body
+      });
+      const json = await apiRes.json();
+      const rawProducts =
+        json &&
+        json.aliexpress_affiliate_product_query_response &&
+        json.aliexpress_affiliate_product_query_response.resp_result &&
+        json.aliexpress_affiliate_product_query_response.resp_result.result &&
+        json.aliexpress_affiliate_product_query_response.resp_result.result.products &&
+        json.aliexpress_affiliate_product_query_response.resp_result.result.products.product;
+
+      const list = Array.isArray(rawProducts) ? rawProducts : [];
+      const items = list
+        .map(p => {
+          const rawPrice = p.target_app_sale_price || p.target_sale_price || p.app_sale_price || p.sale_price || '0';
+          const price = Math.round(parseFloat(String(rawPrice).replace(/[^0-9.]/g, ''))) || 0;
+          const id = String(p.product_id || '').trim();
+          return {
+            id,
+            title: String(p.product_title || '').trim(),
+            price,
+            image: String(p.product_main_image_url || '').trim(),
+            url: id ? `https://ko.aliexpress.com/item/${id}.html` : '',
+            promotionUrl: String(p.promotion_link || '').trim()
+          };
+        })
+        .filter(x => x.id && x.title && x.price > 0);
+
+      return res.status(200).send(JSON.stringify({ ok: items.length > 0, items }));
+    } catch (e) {
+      return res.status(200).send(JSON.stringify({ ok: false, items: [], error: e.message }));
+    }
+  }
+
   // 1. 쇼핑몰 단축/상세 URL 자동 해석 엔드포인트 (?resolveUrl=...)
   if (req.query.resolveUrl) {
     try {
