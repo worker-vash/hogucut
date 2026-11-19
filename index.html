@@ -13,7 +13,7 @@
   <meta name="theme-color" content="#0b0f19">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>호구컷 (HoguCut) v1.0.4 - 인앱 인터넷 브라우저 & AI 직구 체커</title>
+  <title>호구컷 (HoguCut) v1.0.5 - 인앱 인터넷 브라우저 & AI 직구 체커</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/jpeg" href="assets/icon.jpg">
   <link rel="apple-touch-icon" href="assets/icon.jpg">
@@ -41,7 +41,7 @@
   <!-- PC 상단 상태 바 -->
   <div class="hidden md:flex items-center gap-3 mb-3 bg-slate-900/90 border border-slate-800 px-4 py-2 rounded-full text-xs text-slate-300 shadow-lg">
     <img src="assets/icon.jpg" alt="호구컷 로고" class="w-6 h-6 rounded-lg object-cover">
-    <span><strong class="text-amber-400">호구컷 v1.0.4 정식 빌드</strong> — 🌐 실제 인터넷 주소창 브라우저 탑재 • 🏆 전체/주간(월~일) 누적 랭킹 • 🎯 알리 제품 직결</span>
+    <span><strong class="text-amber-400">호구컷 v1.0.5 정식 빌드</strong> — 🌐 실제 인터넷 주소창 브라우저 탑재 • 🏆 전체/주간(월~일) 누적 랭킹 • 🎯 알리 제품 직결</span>
   </div>
 
   <!-- 스마트폰 앱 프레임 -->
@@ -54,7 +54,7 @@
         <div>
           <div class="flex items-center gap-1.5">
             <span class="text-base font-black tracking-tight text-white">호구<span class="text-amber-400">컷</span></span>
-            <span class="text-[9px] bg-gradient-to-r from-red-500 to-amber-500 text-white font-extrabold px-1.5 py-0.5 rounded">v1.0.4</span>
+            <span class="text-[9px] bg-gradient-to-r from-red-500 to-amber-500 text-white font-extrabold px-1.5 py-0.5 rounded">v1.0.5</span>
           </div>
         </div>
       </div>
@@ -4043,6 +4043,21 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         }
       }
 
+      // 1-J) 본체(태블릿/모니터/가전/기기) vs 저가 액세서리(케이스·필름·캡슐·필터·부품) 및 극단적 미끼 저가(국내가 6% 미만) 원천 차단
+      const isKrMainDevice = /태블릿|아이패드|갤럭시탭|노트북|모니터|프로젝터|커피머신|청소기|공기청정기|제빙기|드라이기|드라이어|제모기|안마기|마사지건|스피커|이어폰|헤드셋|스마트워치|카메라|드론|냉장고|에어프라이어/i.test(kr);
+      const isKrAskingAccessory = /케이스|커버|필름|강화유리|스트랩|밴드|거치대|필터|캡슐|파우치|가방|어댑터|충전기|케이블|노즐|브러시|패드|부품|교체|리필|종이호일|실리콘/i.test(kr);
+      if (isKrMainDevice && !isKrAskingAccessory) {
+        if (/\b(case|cover|shell|sleeve|film|glass|protector|sticker|decal|adapter|capsule|filter|stand|holder|mount|strap|band|cable|charger|bag|pouch|replacement|spare|part|refill|reusable\s*pod)\b|케이스|커버|필름|강화유리|보호필름|스트랩|거치대|필터|캡슐|파우치|부품|교체용|리필/i.test(t)) {
+          return -9999;
+        }
+      }
+      if (krTotalPrice >= 50000 && cand.price > 0 && cand.price < Math.max(2000, krTotalPrice * 0.06)) {
+        return -9999; // 5만 원 이상 본체 상품에 6% 미만 초저가 부속/미끼가 오매칭 차단
+      }
+      if (krTotalPrice >= 20000 && cand.price > 0 && cand.price < 1000) {
+        return -9999; // 2만 원 이상 상품에 1,000원 미만 초저가 옵션 미끼 차단
+      }
+
       const krMah = kr.match(/\b(\d{4,5})\s*mah\b/i);
       const aliMah = t.match(/\b(\d{4,5})\s*mah\b/i);
       if (krMah && aliMah) {
@@ -4248,10 +4263,26 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       for (const q of targetQueries) {
         const searchUrl = `https://ko.aliexpress.com/w/wholesale-${encodeURIComponent(q)}.html?SortType=total_tranpro_desc`;
         try {
-          const html = await fetchRealHtmlFromWeb(searchUrl);
-          if (!html || html.length < 500) continue;
-          const cands = parseAliSearchCandidates(html);
-          if (!cands.length) continue;
+          let cands = [];
+          // 1순위: 알리익스프레스 공식 어필리에이트 상품 검색 API (/api/fetch?aliQuery=...) — 차단 없음 & 제휴 링크 포함
+          try {
+            const aliApiEp = (API_BASE_URL ? `${API_BASE_URL}/api/fetch` : '/api/fetch') + `?aliQuery=${encodeURIComponent(q)}`;
+            const ar = await fetchWithTimeout(aliApiEp, 6000);
+            if (ar && ar.ok) {
+              const aj = await ar.json();
+              if (aj && aj.ok && Array.isArray(aj.items) && aj.items.length > 0) {
+                cands = aj.items;
+              }
+            }
+          } catch (eApi) {}
+
+          // 2순위(폴백): 알리 모바일/웹 검색 HTML 실시간 파싱
+          if (!cands.length) {
+            const html = await fetchRealHtmlFromWeb(searchUrl);
+            if (!html || html.length < 500) continue;
+            cands = parseAliSearchCandidates(html);
+            if (!cands.length) continue;
+          }
 
           // 핵심 속성 과반수 일치 & 반의어/가격역전 필터를 통과한 후보만 추출 (상위 12개까지 사진 정밀 비교)
           let scored = cands
@@ -4293,6 +4324,11 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
           aliResolveCandidatePool[cacheKey] = allCandidates;
 
           const result = Object.assign({ url: `https://ko.aliexpress.com/item/${best.id}.html`, matchedQuery: q, _candidatePool: allCandidates }, best);
+          if (best.promotionUrl) {
+            result._affSourceUrl = result.url;
+            result._affPromotionUrl = best.promotionUrl;
+            _affLinkCache.set(result.url, best.promotionUrl);
+          }
 
           // 검색 결과 가격이 누락되었거나 1,500원 미만의 옵션 미끼가로 의심될 때만 상세 페이지(PDP) 추가 조회 (속도 3배 향상)
           if (!best.price || best.price < 1500) {
@@ -10612,7 +10648,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       prepareProductThumbnails();
       navigateToUrl('https://www.naver.com', false);
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js?v=1.0.4').catch(() => {});
+        navigator.serviceWorker.register('sw.js?v=1.0.5').catch(() => {});
       }
       const params = new URLSearchParams(window.location.search);
       const action = params.get('action');
