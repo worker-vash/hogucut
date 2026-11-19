@@ -34,7 +34,7 @@
   <!-- PC 상단 상태 바 -->
   <div class="hidden md:flex items-center gap-3 mb-3 bg-slate-900/90 border border-slate-800 px-4 py-2 rounded-full text-xs text-slate-300 shadow-lg">
     <img src="assets/icon.jpg" alt="호구컷 로고" class="w-6 h-6 rounded-lg object-cover">
-    <span><strong class="text-amber-400">호구컷 v1.0.1 정식 빌드</strong> — 🌐 실제 인터넷 주소창 브라우저 탑재 • 🏆 전체/주간(월~일) 누적 랭킹 • 🎯 알리 제품 직결</span>
+    <span><strong class="text-amber-400">호구컷 v1.0.2 정식 빌드</strong> — 🌐 실제 인터넷 주소창 브라우저 탑재 • 🏆 전체/주간(월~일) 누적 랭킹 • 🎯 알리 제품 직결</span>
   </div>
 
   <!-- 스마트폰 앱 프레임 -->
@@ -47,7 +47,7 @@
         <div>
           <div class="flex items-center gap-1.5">
             <span class="text-base font-black tracking-tight text-white">호구<span class="text-amber-400">컷</span></span>
-            <span class="text-[9px] bg-gradient-to-r from-red-500 to-amber-500 text-white font-extrabold px-1.5 py-0.5 rounded">v1.0.1</span>
+            <span class="text-[9px] bg-gradient-to-r from-red-500 to-amber-500 text-white font-extrabold px-1.5 py-0.5 rounded">v1.0.2</span>
           </div>
         </div>
       </div>
@@ -204,7 +204,7 @@
                 <div class="w-full h-36 rounded-lg overflow-hidden bg-white relative mb-2 border border-red-500/30 flex items-center justify-center">
                   <img id="resAliImage" referrerpolicy="no-referrer" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' fill='%231e293b' viewBox='0 0 100 100'%3E%3Crect width='100' height='100'/%3E%3C/svg%3E" onerror="this.onerror=null; this.src=resolveCategoryRepresentativeImage(currentResultData?currentResultData.ali_title:'');" alt="알리 상품" class="w-full h-full object-contain group-hover:scale-105 transition">
                   <span id="resAliBadge" class="absolute top-1.5 right-1.5 bg-red-600 text-[9px] font-black text-white px-2 py-0.5 rounded">
-                    알리 동일제품
+                    알리 유사·추천
                   </span>
                   <span class="absolute bottom-1 left-1 right-1 bg-red-600/90 text-[9px] text-white font-bold text-center py-0.5 rounded">
                     <i class="fa-solid fa-arrow-up-right-from-square mr-0.5"></i>알리 상품 바로가기
@@ -244,6 +244,9 @@
                 <i class="fa-solid fa-magnifying-glass-chart"></i> 호구컷 AI 판정 소견서
               </p>
               <p id="resReason" class="text-[11px] text-slate-300 leading-relaxed"></p>
+              <p class="text-[10px] text-slate-500 leading-relaxed mt-2 pt-2 border-t border-slate-800/80">
+                ※ 본 비교 결과는 키워드·이미지 기반의 참고용 정보이며, 두 상품의 동일 제조사·정품·품질 여부를 보증하지 않습니다. 결제 전 실제 가격·옵션·배송비·관부가세(\$150 기준, 환율에 따라 변동)·KC인증 여부를 반드시 직접 확인하세요.
+              </p>
             </div>
           </div>
 
@@ -252,6 +255,9 @@
             <a id="resAliLink" href="javascript:void(0)" target="_blank" onclick="return openDirectAliItemPage(event)" class="w-full py-3.5 bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400 rounded-xl text-center text-xs font-black text-white shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 transition cursor-pointer">
               <i class="fa-solid fa-cart-shopping"></i> <span id="resBuyBtnText">알리 1위 직구 상품 바로가기</span>
             </a>
+            <p class="text-[10px] text-slate-500 text-center leading-snug px-1">
+              ※ 제휴 마케팅 활동의 일환으로, 위 링크를 통해 구매 시 일정액의 수수료를 제공받습니다.
+            </p>
 
             <!-- [보조 비교 버튼] 옵션 1: 다른 판매자 실시간 최저가 검색 목록 -->
             <a id="resAliSearchBtn" href="javascript:void(0)" target="_blank" onclick="return openAliSearchListPage(event)" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 rounded-xl text-center text-[11px] font-bold text-slate-300 flex items-center justify-center gap-1.5 transition cursor-pointer">
@@ -4438,7 +4444,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       }
       if (!d.is_brand && d.risk_score > 0) {
         const aliBadge = document.getElementById('resAliBadge');
-        if (aliBadge) aliBadge.innerText = '알리 동일제품';
+        if (aliBadge) aliBadge.innerText = '알리 유사·추천';
       }
       syncResultMetricsAndReason(d);
       const aliPriceEl = document.getElementById('resAliPrice');
@@ -4554,8 +4560,10 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       const isLive = Boolean(d && d._aliLiveVerified);
       const specificItemUrl = ensureSpecificAliItemUrl(rawHref, titleHint, isLive);
 
-      const href = getAffiliatedAliUrl(specificItemUrl);
-      const win = window.open(href, '_blank', 'noopener');
+      const promoUrl = (d && d._affPromotionUrl && d._affSourceUrl === specificItemUrl)
+        ? d._affPromotionUrl
+        : getAffiliatedAliUrl(specificItemUrl);
+      const win = window.open(promoUrl, '_blank', 'noopener');
       if (win) win.opener = null;
       return false;
     }
@@ -4565,27 +4573,30 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         ? 'https://hogucut.vercel.app'
         : ''
     );
-    const DEFAULT_OPERATOR_AFFILIATE_ID = '';
 
-    function getAffiliatedAliUrl(targetUrl) {
-      if (!targetUrl || typeof targetUrl !== 'string') return targetUrl;
-      const affId = localStorage.getItem('hogucut_affiliate_id') || DEFAULT_OPERATOR_AFFILIATE_ID;
-      // 등록된 실제 제휴 코드가 없거나 더미 코드인 경우 순수 URL 그대로 반환 (잘못된 sk 파라미터로 인한 알리 404 차단 완벽 방지)
-      if (!affId || affId === 'hogucut' || affId === 'hogucut_official') {
-        return targetUrl;
+    const _affLinkCache = new Map();
+    async function prefetchAffiliateLink(d, specificUrl) {
+      if (!d || !specificUrl || !/aliexpress\.com\/item\/\d+\.html/i.test(specificUrl)) return;
+      if (_affLinkCache.has(specificUrl)) {
+        d._affSourceUrl = specificUrl;
+        d._affPromotionUrl = _affLinkCache.get(specificUrl);
+        return;
       }
       try {
-        const u = new URL(targetUrl);
-        if (u.hostname.includes('aliexpress.com')) {
-          if (!u.searchParams.has('aff_fcid')) {
-            u.searchParams.set('aff_platform', 'portals-tool');
-            u.searchParams.set('sk', affId);
-          }
+        const endpoint = (API_BASE_URL ? `${API_BASE_URL}/api/fetch` : '/api/fetch') + `?affUrl=${encodeURIComponent(specificUrl)}`;
+        const r = await fetch(endpoint);
+        if (!r || !r.ok) return;
+        const json = await r.json();
+        if (json && json.ok && json.promotionUrl) {
+          _affLinkCache.set(specificUrl, json.promotionUrl);
+          d._affSourceUrl = specificUrl;
+          d._affPromotionUrl = json.promotionUrl;
         }
-        return u.toString();
-      } catch (e) {
-        return targetUrl;
-      }
+      } catch (e) {}
+    }
+
+    function getAffiliatedAliUrl(targetUrl) {
+      return targetUrl;
     }
 
     // [옵션 3: 수익화 설정 모달] 사용자 지정 제휴 트래킹 ID 설정
@@ -10147,7 +10158,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       }
       const aliBadgeEl = document.getElementById('resAliBadge');
       if (aliBadgeEl) {
-        aliBadgeEl.innerText = d.ali_badge || (d.is_brand ? '알리 공식스토어' : '알리 동일제품');
+        aliBadgeEl.innerText = d.ali_badge || (d.is_brand ? '알리 공식스토어' : '알리 유사·추천');
       }
 
       const aliTitleEl = document.getElementById('resAliTitle');
@@ -10167,7 +10178,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
 
       const srcBadgeEl = document.getElementById('resSourceBadge');
       if (srcBadgeEl) {
-        srcBadgeEl.innerText = d.is_verified ? '알리 1위 공식 직결' : (d.is_brand ? '알리 공식스토어' : '실시간 시세 대조');
+        srcBadgeEl.innerText = d.is_verified ? '알리 직구 매칭' : (d.is_brand ? '알리 공식스토어' : '실시간 시세 대조');
       }
 
       const timeBadgeEl = document.getElementById('resTimestampBadge');
@@ -10190,6 +10201,9 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
 
       const aliLink = document.getElementById('resAliLink');
       if (aliLink) aliLink.href = directUrl;
+      if (d.risk_score !== 0) {
+        prefetchAffiliateLink(d, directUrl);
+      }
 
       const aliSearchBtn = document.getElementById('resAliSearchBtn');
       if (aliSearchBtn) aliSearchBtn.href = searchUrl;
@@ -10576,7 +10590,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       prepareProductThumbnails();
       navigateToUrl('https://www.naver.com', false);
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js?v=1.0.1').catch(() => {});
+        navigator.serviceWorker.register('sw.js?v=1.0.2').catch(() => {});
       }
       const params = new URLSearchParams(window.location.search);
       const action = params.get('action');
