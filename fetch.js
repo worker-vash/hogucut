@@ -1,3 +1,5 @@
+const crypto = require('crypto');
+
 // Helper to parse Naver Shopping items from mobile search HTML
 function parseNaverShoppingFromHtml(rawHtml) {
   if (!rawHtml || typeof rawHtml !== 'string') return [];
@@ -76,18 +78,14 @@ function parseNaverShoppingFromHtml(rawHtml) {
       if (mt && mt.length >= 2 && mt.length <= 20) mall = mt;
     }
 
-    // Direct product link extraction
+    // Direct product link extraction (never emit fragile /catalog/ URLs that show '상품이 없습니다')
     let link = '';
-    const adLinkM = (beforeChunk + afterChunk.substring(0, 300)).match(/href=["'](https:\/\/ader\.naver\.com\/[^"']+)["']/i);
-    if (adLinkM) {
-      link = adLinkM[1].replace(/&amp;/g, '&');
+    const linkChunk = beforeChunk + afterChunk.substring(0, 600);
+    const realLinkM = linkChunk.match(/href=["'](https:\/\/(?:ader\.naver\.com|cr\.shopping\.naver\.com|smartstore\.naver\.com\/[^"']+\/products\/\d+|brand\.naver\.com\/[^"']+\/products\/\d+)[^"']*)["']/i);
+    if (realLinkM) {
+      link = realLinkM[1].replace(/&amp;/g, '&');
     } else {
-      const pidM = imgUrl.match(/main_\d+\/(\d+)\./);
-      if (pidM) {
-        link = `https://search.shopping.naver.com/catalog/${pidM[1]}`;
-      } else {
-        link = `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(title)}`;
-      }
+      link = `https://msearch.shopping.naver.com/search/all?query=${encodeURIComponent(title)}`;
     }
 
     const normTitleKey = title.toLowerCase().replace(/\s+/g, '').slice(0, 25);
@@ -383,10 +381,67 @@ async function resolveShoppingUrlOnServer(rawInputUrl) {
 }
 
 module.exports = async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = (req.headers && req.headers.origin) || '';
+  const allowedOrigin = /^https:\/\/(worker-vash\.github\.io|hogucut\.vercel\.app)$|^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)
+    ? origin
+    : (!origin ? '*' : 'https://worker-vash.github.io');
+  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+  res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+
+  // 0. 알리익스프레스 공식 어필리에이트 제휴 링크 변환 엔드포인트 (?affUrl=...)
+  if (req.query.affUrl) {
+    const rawAffUrl = String(req.query.affUrl).trim();
+    const appKey = process.env.ALI_APP_KEY || '560630';
+    const appSecret = process.env.ALI_APP_SECRET || '';
+    const trackingId = process.env.ALI_TRACKING_ID || 'hogucut';
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+
+    if (!appSecret || !/^https?:\/\/[^/]*aliexpress\.com\//i.test(rawAffUrl)) {
+      return res.status(200).send(JSON.stringify({ ok: false, fallbackUrl: rawAffUrl }));
+    }
+
+    try {
+      const apiName = 'aliexpress.affiliate.link.generate';
+      const signParams = {
+        app_key: appKey,
+        promotion_link_type: '0',
+        sign_method: 'sha256',
+        source_values: rawAffUrl,
+        timestamp: Date.now().toString(),
+        tracking_id: trackingId
+      };
+      const sorted = Object.keys(signParams).sort();
+      const baseString = apiName + sorted.map(k => k + signParams[k]).join('');
+      const sign = crypto.createHmac('sha256', appSecret).update(baseString).digest('hex').toUpperCase();
+      const body = new URLSearchParams({ method: apiName, ...signParams, sign }).toString();
+
+      const apiRes = await fetch('https://api-sg.aliexpress.com/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' },
+        body
+      });
+      const json = await apiRes.json();
+      const promoLink =
+        json &&
+        json.aliexpress_affiliate_link_generate_response &&
+        json.aliexpress_affiliate_link_generate_response.resp_result &&
+        json.aliexpress_affiliate_link_generate_response.resp_result.result &&
+        json.aliexpress_affiliate_link_generate_response.resp_result.result.promotion_links &&
+        json.aliexpress_affiliate_link_generate_response.resp_result.result.promotion_links.promotion_link &&
+        json.aliexpress_affiliate_link_generate_response.resp_result.result.promotion_links.promotion_link[0] &&
+        json.aliexpress_affiliate_link_generate_response.resp_result.result.promotion_links.promotion_link[0].promotion_link;
+
+      if (promoLink) {
+        return res.status(200).send(JSON.stringify({ ok: true, promotionUrl: promoLink }));
+      }
+      return res.status(200).send(JSON.stringify({ ok: false, fallbackUrl: rawAffUrl }));
+    } catch (e) {
+      return res.status(200).send(JSON.stringify({ ok: false, fallbackUrl: rawAffUrl, error: e.message }));
+    }
   }
 
   // 1. 쇼핑몰 단축/상세 URL 자동 해석 엔드포인트 (?resolveUrl=...)
@@ -475,7 +530,7 @@ module.exports = async function handler(req, res) {
         shipping: it.shipping || 0,
         image: it.image,
         mallName: it.mall || '네이버 가격비교',
-        link: it.link || (it.image && it.image.match(/main_\d+\/(\d+)\./) ? `https://search.shopping.naver.com/catalog/${it.image.match(/main_\d+\/(\d+)\./)[1]}` : `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(it.title)}`)
+        link: it.link || `https://msearch.shopping.naver.com/search/all?query=${encodeURIComponent(it.title)}`
       }));
       res.setHeader('Content-Type', 'application/json; charset=utf-8');
       return res.status(200).send(JSON.stringify({ items: formatted }));
@@ -489,6 +544,22 @@ module.exports = async function handler(req, res) {
   const targetUrl = req.query.url;
   if (!targetUrl) {
     return res.status(400).send('Missing url parameter');
+  }
+  try {
+    const parsedTarget = new URL(targetUrl);
+    if (!['http:', 'https:'].includes(parsedTarget.protocol)) {
+      return res.status(400).send('Invalid protocol');
+    }
+    const h = parsedTarget.hostname.toLowerCase();
+    if (
+      h === 'localhost' || h === '0.0.0.0' || h === '::1' || h === '[::1]' ||
+      /^127\./.test(h) || /^10\./.test(h) || /^192\.168\./.test(h) ||
+      /^169\.254\./.test(h) || /^172\.(1[6-9]|2\d|3[01])\./.test(h)
+    ) {
+      return res.status(403).send('Forbidden host');
+    }
+  } catch (e) {
+    return res.status(400).send('Invalid url');
   }
 
   try {

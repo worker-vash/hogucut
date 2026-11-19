@@ -13,7 +13,7 @@
   <meta name="theme-color" content="#0b0f19">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>호구컷 (HoguCut) v1.0.3 - 인앱 인터넷 브라우저 & AI 직구 체커</title>
+  <title>호구컷 (HoguCut) v1.0.4 - 인앱 인터넷 브라우저 & AI 직구 체커</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/jpeg" href="assets/icon.jpg">
   <link rel="apple-touch-icon" href="assets/icon.jpg">
@@ -41,7 +41,7 @@
   <!-- PC 상단 상태 바 -->
   <div class="hidden md:flex items-center gap-3 mb-3 bg-slate-900/90 border border-slate-800 px-4 py-2 rounded-full text-xs text-slate-300 shadow-lg">
     <img src="assets/icon.jpg" alt="호구컷 로고" class="w-6 h-6 rounded-lg object-cover">
-    <span><strong class="text-amber-400">호구컷 v1.0.3 정식 빌드</strong> — 🌐 실제 인터넷 주소창 브라우저 탑재 • 🏆 전체/주간(월~일) 누적 랭킹 • 🎯 알리 제품 직결</span>
+    <span><strong class="text-amber-400">호구컷 v1.0.4 정식 빌드</strong> — 🌐 실제 인터넷 주소창 브라우저 탑재 • 🏆 전체/주간(월~일) 누적 랭킹 • 🎯 알리 제품 직결</span>
   </div>
 
   <!-- 스마트폰 앱 프레임 -->
@@ -54,7 +54,7 @@
         <div>
           <div class="flex items-center gap-1.5">
             <span class="text-base font-black tracking-tight text-white">호구<span class="text-amber-400">컷</span></span>
-            <span class="text-[9px] bg-gradient-to-r from-red-500 to-amber-500 text-white font-extrabold px-1.5 py-0.5 rounded">v1.0.3</span>
+            <span class="text-[9px] bg-gradient-to-r from-red-500 to-amber-500 text-white font-extrabold px-1.5 py-0.5 rounded">v1.0.4</span>
           </div>
         </div>
       </div>
@@ -2987,7 +2987,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       '1005006117270672'
     ]);
 
-    // 실제 접속 검증이 완료된 국내 쇼핑몰 상품 상세 URL 목록 (운영 중지 스토어 에러 원천 차단)
+    // 실제 접속 검증이 완료된 국내 쇼핑몰 상품 상세 URL 목록 (만료/품절 에러가 잦은 /catalog/ URL 원천 제외)
     const VERIFIED_REAL_DOMESTIC_URLS = new Set([
       'https://smartstore.naver.com/moodoong/products/7672555704',
       'https://brand.naver.com/ugreen/products/11125824688',
@@ -2995,15 +2995,6 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       'https://brand.naver.com/logitech/products/4904082260',
       'https://smartstore.naver.com/funkeys/products/9376664919',
       'https://www.wconcept.co.kr/Product/308653133',
-      'https://search.shopping.naver.com/catalog/88121457122',
-      'https://search.shopping.naver.com/catalog/86150663753',
-      'https://search.shopping.naver.com/catalog/85217056026',
-      'https://search.shopping.naver.com/catalog/88253326292',
-      'https://search.shopping.naver.com/catalog/12673617862',
-      'https://search.shopping.naver.com/catalog/90277539478',
-      'https://search.shopping.naver.com/catalog/81108457352',
-      'https://search.shopping.naver.com/catalog/61234540538',
-      'https://search.shopping.naver.com/catalog/53510335454',
       'https://m.shoppinghow.kakao.com/m/product/E5251747512',
       'https://m.shoppinghow.kakao.com/m/product/A5100981460',
       'https://m.shoppinghow.kakao.com/m/product/A5126773666',
@@ -3012,9 +3003,11 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
 
     function isVerifiedDomesticProductUrl(url) {
       if (!url || typeof url !== 'string') return false;
+      if (/shopping\.naver\.com\/catalog\//i.test(url)) return false;
       if (VERIFIED_REAL_DOMESTIC_URLS.has(url)) return true;
       if (/ader\.naver\.com|cr\.shopping\.naver\.com/i.test(url)) return true;
-      if (/shoppinghow\.kakao\.com\/m\/product\/[A-Z0-9]+\//i.test(url)) return true;
+      if (/(?:smartstore|brand)\.naver\.com\/[^\/]+\/products\/\d+/i.test(url)) return true;
+      if (/shoppinghow\.kakao\.com\/m\/product\/[A-Z0-9]+/i.test(url)) return true;
       return false;
     }
 
@@ -3024,6 +3017,9 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         if (isLiveVerified || (m && VERIFIED_REAL_ALI_IDS.has(m[1]))) {
           return 'https://ko.aliexpress.com/item/' + m[1] + '.html';
         }
+      }
+      if (rawUrl && /^https?:\/\/[^\/]*aliexpress\.com\/(?:w\/wholesale-|wholesale\?)/i.test(rawUrl)) {
+        return rawUrl;
       }
       const t = (titleHint || '').toLowerCase();
       const u = (rawUrl || '').toLowerCase();
@@ -3038,11 +3034,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         return 'https://ko.aliexpress.com/item/' + matchedModel.aliId + '.html';
       }
 
-      if (rawUrl && /^https?:\/\/[^\/]*aliexpress\.com\/(?:w\/wholesale-|wholesale\?)/i.test(rawUrl)) {
-        return rawUrl;
-      }
-
-      const cleanQ = ((matchedModel && matchedModel.name) || titleHint || '인기 직구 상품')
+      const cleanQ = (titleHint || (matchedModel && matchedModel.name) || '인기 직구 상품')
         .replace(/^\[.*?\]\s*/, '')
         .replace(/\(.*?\)/g, '')
         .trim() || '인기 직구 상품';
@@ -3050,7 +3042,8 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
     }
 
     function ensureSpecificDomesticItemUrl(rawUrl, titleHint, isLiveVerified = false) {
-      if (rawUrl && (isLiveVerified || isVerifiedDomesticProductUrl(rawUrl))) {
+      const isFragileCatalog = Boolean(rawUrl && /shopping\.naver\.com\/catalog\//i.test(rawUrl));
+      if (rawUrl && !isFragileCatalog && (isLiveVerified || isVerifiedDomesticProductUrl(rawUrl))) {
         return rawUrl;
       }
       const t = (titleHint || '').toLowerCase();
@@ -3060,17 +3053,11 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         return 'https://smartstore.naver.com/moodoong/products/7672555704';
       }
 
-      const cat = resolveUniversalCategory(titleHint || rawUrl);
-      const matchedModel = findMatchingModelInCategory(cat, titleHint || rawUrl);
-      if (matchedModel && matchedModel.domLink && VERIFIED_REAL_DOMESTIC_URLS.has(matchedModel.domLink)) {
-        return matchedModel.domLink;
-      }
-
       if (rawUrl && /^https?:\/\/(?:msearch|search)\.shopping\.naver\.com\/search\/all\?query=/i.test(rawUrl)) {
         return rawUrl;
       }
 
-      const cleanQ = ((matchedModel && matchedModel.name) || titleHint || '인기 쇼핑 상품')
+      const cleanQ = (titleHint || '인기 쇼핑 상품')
         .replace(/^\[.*?\]\s*/, '')
         .replace(/\(.*?\)/g, '')
         .trim() || '인기 쇼핑 상품';
@@ -3082,10 +3069,8 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       const d = currentResultData;
       const rawTitle = (d && (d.kr_title || d.keyword)) || (document.getElementById('urlInput') && document.getElementById('urlInput').value) || '';
       let rawUrl = (d && d.kr_url) || '';
-      const imgCatMatch = rawUrl && rawUrl.match(/\/catalog\/(\d+)/i);
-      const isImgDerivedCatalog = Boolean(imgCatMatch && d && d.kr_image && new RegExp('main_\\d+/' + imgCatMatch[1] + '\\.').test(d.kr_image));
-      if (isImgDerivedCatalog) rawUrl = '';
-      const isLive = Boolean(!isImgDerivedCatalog && d && d._krLiveVerified);
+      if (rawUrl && /shopping\.naver\.com\/catalog\//i.test(rawUrl)) rawUrl = '';
+      const isLive = Boolean(rawUrl && d && d._krLiveVerified);
       const targetUrl = ensureSpecificDomesticItemUrl(rawUrl, rawTitle, isLive);
       const win = window.open(targetUrl, '_blank', 'noreferrer,noopener');
       if (win) win.opener = null;
@@ -4161,11 +4146,11 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         else score -= 12;
       }
 
-      // 5) 직구 가성비 구간(국내가의 12%~60%) 가점
+      // 5) 직구 가성비 구간(국내가의 12%~60%) 가점 (알리가 더 비싸더라도 유효 매칭을 탈락시키지 않음!)
       if (krTotalPrice > 0 && cand.price > 0) {
         const ratio = cand.price / krTotalPrice;
-        if (ratio >= 0.12 && ratio <= 0.60) score += 25;
-        else if (ratio > 0.80) score -= 35;
+        if (ratio >= 0.12 && ratio <= 0.60) score += 20;
+        else if (ratio > 1.2) score = Math.max(1, score - 10);
       }
 
       return score;
@@ -4342,15 +4327,19 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       const krShip = Number(d.kr_shipping) || 0;
       const krTotal = krPrice + krShip;
       const aliPrice = Number(d.ali_price) || 0;
+      const isNoAliMatch = (aliPrice <= 0);
       d.kr_total = krTotal;
-      d.saved_amount = Math.max(0, krTotal - aliPrice);
+      d.saved_amount = isNoAliMatch ? 0 : Math.max(0, krTotal - aliPrice);
 
       const shipDesc = krShip > 0
         ? `${krPrice.toLocaleString()}원 + 배송비 ${krShip.toLocaleString()}원(총 ${krTotal.toLocaleString()}원)`
         : `${krPrice.toLocaleString()}원(무료배송)`;
       const titleShort = (d.kr_title || '검색 상품').trim();
 
-      if (d.is_verified && d.reason && !d._userPriceEdited) {
+      if (isNoAliMatch) {
+        d.risk_score = 0;
+        d.reason = `[실시간 대조 안내] '${titleShort}' 상품과 일치하는 알리익스프레스 상품을 자동으로 찾지 못했습니다. 아래 [알리익스프레스에서 직접 검색하기] 버튼을 눌러 최신 직구가를 확인해 주세요.`;
+      } else if (d.is_verified && d.reason && !d._userPriceEdited) {
         // 이미 1:1 검증된 맞춤 데이터(유그린 165W, 투키 67W 등)는 지정된 risk_score와 reason을 그대로 유지!
       } else if (krTotal > 0 && aliPrice > 0 && krTotal > aliPrice) {
         const pct = Math.round(((krTotal - aliPrice) / krTotal) * 100);
@@ -4363,29 +4352,41 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       } else {
         d.risk_score = 0;
         const diffMore = Math.max(0, aliPrice - krTotal);
-        d.reason = `[실시간 직구 대조] '${titleShort}' 상품은 국내 판매가(${shipDesc})가 알리익스프레스 판매가(약 ${aliPrice.toLocaleString()}원)보다 ${diffMore.toLocaleString()}원 더 저렴합니다. 직구 이득이 없으므로(이득 지수 0%) 국내 구매를 강력히 추천합니다.`;
+        d.reason = diffMore > 0
+          ? `[실시간 직구 대조] '${titleShort}' 상품은 국내 판매가(${shipDesc})가 알리익스프레스 판매가(약 ${aliPrice.toLocaleString()}원)보다 ${diffMore.toLocaleString()}원 더 저렴합니다. 직구 이득이 없으므로(이득 지수 0%) 국내 구매를 추천합니다.`
+          : `[실시간 직구 대조] '${titleShort}' 상품은 국내 판매가(${shipDesc})와 알리익스프레스 판매가(약 ${aliPrice.toLocaleString()}원)가 거의 동일합니다. 배송 기간과 A/S를 고려해 국내 구매를 추천합니다.`;
       }
 
       // DOM 요소 실시간 동기화
       const scoreEl = document.getElementById('resRiskScore');
       if (scoreEl) {
-        scoreEl.innerText = `${d.risk_score}%`;
-        scoreEl.className = d.risk_score === 0 ? 'text-emerald-400' : 'text-amber-400';
+        if (isNoAliMatch) {
+          scoreEl.innerText = '직접 확인';
+          scoreEl.className = 'text-amber-400';
+        } else {
+          scoreEl.innerText = `${d.risk_score}%`;
+          scoreEl.className = d.risk_score === 0 ? 'text-emerald-400' : 'text-amber-400';
+        }
       }
       const descEl = document.getElementById('resSavedDesc');
       if (descEl) {
-        if (d.risk_score === 0 || d.saved_amount === 0) {
+        if (isNoAliMatch) {
+          descEl.innerHTML = `알리 자동 매칭 결과가 없습니다. <span id="resSavedMoney" class="text-amber-400 font-black text-sm">아래 버튼으로 알리에서 직접 검색</span>해 보세요!`;
+        } else if (d.risk_score === 0 || d.saved_amount === 0) {
           const diffMore = Math.max(0, aliPrice - krTotal);
           descEl.innerHTML = diffMore > 0
-            ? `알리 직구가 약 <span id="resSavedMoney" class="text-sky-400 font-black text-sm">${diffMore.toLocaleString()}원 더 비쌉니다</span> (국내 구매 강력 추천!)`
-            : `국내 공식스토어가(89,900원)와 동일하여 <span id="resSavedMoney" class="text-emerald-400 font-black text-sm">국내 구매(1년 무상 A/S)를 강력 추천합니다!</span>`;
+            ? `알리 직구가 약 <span id="resSavedMoney" class="text-sky-400 font-black text-sm">${diffMore.toLocaleString()}원 더 비쌉니다</span> (국내 구매 추천!)`
+            : `국내 판매가(${krTotal.toLocaleString()}원)와 알리 직구가(약 ${aliPrice.toLocaleString()}원)가 비슷하여 <span id="resSavedMoney" class="text-emerald-400 font-black text-sm">국내 구매를 추천합니다!</span>`;
         } else {
           descEl.innerHTML = `알리익스프레스 직구 시 <span id="resSavedMoney" class="text-emerald-400 font-black text-sm">${d.saved_amount.toLocaleString()}원</span>을 아낄 수 있습니다!`;
         }
       }
       const gradeBadge = document.getElementById('resGradeBadge');
       if (gradeBadge) {
-        if (d.risk_score === 0) {
+        if (isNoAliMatch) {
+          gradeBadge.className = 'inline-flex items-center gap-1 bg-slate-700 text-amber-300 text-[10px] font-black px-3 py-0.5 rounded-full uppercase mb-1';
+          gradeBadge.innerText = '🔍 알리 자동 매칭 없음 (직접 검색 권장)';
+        } else if (d.risk_score === 0) {
           gradeBadge.className = 'inline-flex items-center gap-1 bg-emerald-600 text-white text-[10px] font-black px-3 py-0.5 rounded-full uppercase mb-1';
           gradeBadge.innerText = '✅ 국내 구매 추천 (국내 직판가와 동일/유리)';
         } else {
@@ -4398,7 +4399,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       if (krPriceEl) krPriceEl.innerText = `${krPrice.toLocaleString()}원`;
 
       const aliPriceEl = document.getElementById('resAliPrice');
-      if (aliPriceEl) aliPriceEl.innerText = `약 ${aliPrice.toLocaleString()}원`;
+      if (aliPriceEl) aliPriceEl.innerText = isNoAliMatch ? '직접 검색 확인' : `약 ${aliPrice.toLocaleString()}원`;
 
       const reasonEl = document.getElementById('resReason');
       if (reasonEl) reasonEl.innerText = d.reason || '';
@@ -4556,15 +4557,23 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         }).catch(() => {});
       }
 
-      if (d && d.risk_score === 0 && d.kr_url) {
-        const win = window.open(d.kr_url, '_blank', 'noopener');
+      // 알리 상품 카드/버튼은 어떠한 경우에도 네이버가 아니라 알리익스프레스로 이동!
+      const titleHint = (d && (d.kr_title || d.ali_title || d.keyword)) || (document.getElementById('urlInput') && document.getElementById('urlInput').value) || '';
+      const aliPriceNum = Number(d && d.ali_price) || 0;
+      const isLive = Boolean(d && d._aliLiveVerified);
+
+      if (!isLive && aliPriceNum <= 0) {
+        const cleanQ = titleHint.replace(/^\[.*?\]\s*/, '').replace(/\(.*?\)/g, '').trim() || '인기 직구 상품';
+        const fallbackSearch = (d && d.ali_search_url && d.ali_search_url.includes('aliexpress.com'))
+          ? d.ali_search_url
+          : ('https://ko.aliexpress.com/w/wholesale-' + encodeURIComponent(cleanQ) + '.html?SortType=total_tranpro_desc');
+        const win = window.open(fallbackSearch, '_blank', 'noopener');
         if (win) win.opener = null;
         return false;
       }
 
-      const titleHint = (d && (d.kr_title || d.ali_title || d.keyword)) || (document.getElementById('urlInput') && document.getElementById('urlInput').value) || '';
       let rawHref = (d && (d.ali_url || d.ali_direct_url)) || (document.getElementById('resAliLink') && (document.getElementById('resAliLink').getAttribute('href') || document.getElementById('resAliLink').href)) || '';
-      const isLive = Boolean(d && d._aliLiveVerified);
+      if (rawHref && !/aliexpress\.com/i.test(rawHref)) rawHref = '';
       const specificItemUrl = ensureSpecificAliItemUrl(rawHref, titleHint, isLive);
 
       const promoUrl = (d && d._affPromotionUrl && d._affSourceUrl === specificItemUrl)
@@ -9079,11 +9088,10 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         const targetImage = getSafeProductImageUrl(p.image, targetTitle);
         const targetMall = p.mall || '네이버 쇼핑 1위';
 
-        const rawDomLink = p.link || p.url || (matchedModel ? matchedModel.domLink : '');
-        const imgCatMatch = rawDomLink && rawDomLink.match(/\/catalog\/(\d+)/i);
-        const isImgDerivedCatalog = Boolean(imgCatMatch && p.image && new RegExp('main_\\d+/' + imgCatMatch[1] + '\\.').test(p.image));
-        const safeRawDomLink = isImgDerivedCatalog ? '' : rawDomLink;
-        const isDomVerified = Boolean(!isImgDerivedCatalog && (p._krLiveVerified || isVerifiedDomesticProductUrl(safeRawDomLink)));
+        const rawDomLink = p.link || p.url || '';
+        const isFragileCatalog = Boolean(rawDomLink && /shopping\.naver\.com\/catalog\//i.test(rawDomLink));
+        const safeRawDomLink = isFragileCatalog ? '' : rawDomLink;
+        const isDomVerified = Boolean(safeRawDomLink && (p._krLiveVerified || isVerifiedDomesticProductUrl(safeRawDomLink)));
         const targetDomesticUrl = ensureSpecificDomesticItemUrl(safeRawDomLink, targetTitle, isDomVerified);
 
         const rawAliId = matchedModel && matchedModel.aliId ? String(matchedModel.aliId) : '';
@@ -10171,12 +10179,17 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       const aliTitleEl = document.getElementById('resAliTitle');
       if (aliTitleEl) aliTitleEl.innerText = d.ali_title || '알리익스프레스 직구 상품';
 
+      const aliPriceVal = Number(d.ali_price) || 0;
+      const isNoAliMatch = aliPriceVal <= 0;
+
       const aliPriceEl = document.getElementById('resAliPrice');
-      if (aliPriceEl) aliPriceEl.innerText = `약 ${(Number(d.ali_price) || 0).toLocaleString()}원`;
+      if (aliPriceEl) aliPriceEl.innerText = isNoAliMatch ? '직접 검색 확인' : `약 ${aliPriceVal.toLocaleString()}원`;
 
       const simEl = document.getElementById('resSimilarity');
       if (simEl) {
-        simEl.innerText = `모델 일치율 ${d.similarity || 98}%`;
+        simEl.innerText = isNoAliMatch
+          ? '일치 상품 없음'
+          : `모델 일치율 ${Number(d.similarity) > 0 ? d.similarity : 78}%`;
       }
 
       // 4. [AI 판정 소견서 & 실시간 출처/시간 메타데이터] 렌더링
@@ -10195,20 +10208,23 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
         timeBadgeEl.innerText = `${dateStr} 시세 기준`;
       }
 
-      // 5. [링크 및 이동 버튼] 세팅 (중복 이모지 제거 & 404 원천 차단)
+      // 5. [링크 및 이동 버튼] 세팅 (알리 버튼은 항상 알리로만 연결, 0원/매칭없음 시 알리 검색으로 연결)
       const precise = buildPreciseAliLinks(d.kr_title, d.keyword || d._searchedRawUrl || d._aliQuery || '');
-      const directUrl = ensureSpecificAliItemUrl(d.ali_direct_url || d.ali_url, d.kr_title || d.ali_title || '', Boolean(d._aliLiveVerified));
-      d.ali_direct_url = directUrl;
-      d.ali_url = directUrl;
       const searchUrl = 'https://ko.aliexpress.com/w/wholesale-' + encodeURIComponent(precise.preciseQuery || d.keyword || '인기 직구 상품') + '.html?SortType=total_tranpro_desc';
       d.ali_search_url = searchUrl;
+
+      const directUrl = isNoAliMatch
+        ? searchUrl
+        : ensureSpecificAliItemUrl(d.ali_direct_url || d.ali_url, d.kr_title || d.ali_title || '', Boolean(d._aliLiveVerified));
+      d.ali_direct_url = directUrl;
+      d.ali_url = directUrl;
 
       const aliCardLink = document.getElementById('resAliCardLink');
       if (aliCardLink) aliCardLink.href = directUrl;
 
       const aliLink = document.getElementById('resAliLink');
       if (aliLink) aliLink.href = directUrl;
-      if (d.risk_score !== 0) {
+      if (!isNoAliMatch) {
         prefetchAffiliateLink(d, directUrl);
       }
 
@@ -10218,16 +10234,15 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       const buyBtnText = document.getElementById('resBuyBtnText');
       const searchBtnText = document.getElementById('resAliSearchBtnText');
 
-      if (d.risk_score === 0) {
-        if (buyBtnText) buyBtnText.innerText = '국내 공식스토어 구매 추천 (89,900원, 1년 A/S)';
-        if (aliLink) aliLink.href = d.kr_url || 'https://brand.naver.com/ugreen/products/11125824688';
-        if (searchBtnText) {
-          searchBtnText.innerText = '알리 1위 직구 상품(약 ' + (d.ali_price || 89290).toLocaleString() + '원) 직접 대조하기';
-        }
-        if (aliSearchBtn) aliSearchBtn.href = directUrl;
+      if (isNoAliMatch) {
+        if (buyBtnText) buyBtnText.innerText = '알리익스프레스에서 직접 검색하기';
+        if (searchBtnText) searchBtnText.innerText = '다른 판매자 실시간 최저가 전체 비교';
+      } else if (d.risk_score === 0) {
+        if (buyBtnText) buyBtnText.innerText = '알리 매칭 상품 직접 확인하기 (약 ' + aliPriceVal.toLocaleString() + '원)';
+        if (searchBtnText) searchBtnText.innerText = '다른 판매자 실시간 최저가 전체 비교';
       } else {
         if (buyBtnText) {
-          buyBtnText.innerText = '알리 1위 직구 상품 바로가기 (약 ' + (d.ali_price || 0).toLocaleString() + '원)';
+          buyBtnText.innerText = '알리 1위 직구 상품 바로가기 (약 ' + aliPriceVal.toLocaleString() + '원)';
         }
         if (searchBtnText) {
           searchBtnText.innerText = '다른 판매자 실시간 최저가 전체 비교';
@@ -10597,7 +10612,7 @@ const S26_CASE_IMG_B64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wB
       prepareProductThumbnails();
       navigateToUrl('https://www.naver.com', false);
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js?v=1.0.3').catch(() => {});
+        navigator.serviceWorker.register('sw.js?v=1.0.4').catch(() => {});
       }
       const params = new URLSearchParams(window.location.search);
       const action = params.get('action');
