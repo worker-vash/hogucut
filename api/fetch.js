@@ -408,6 +408,7 @@ module.exports = async function handler(req, res) {
       const apiName = 'aliexpress.affiliate.link.generate';
       const signParams = {
         app_key: appKey,
+        method: apiName,
         promotion_link_type: '0',
         sign_method: 'sha256',
         source_values: rawAffUrl,
@@ -415,9 +416,9 @@ module.exports = async function handler(req, res) {
         tracking_id: trackingId
       };
       const sorted = Object.keys(signParams).sort();
-      const baseString = apiName + sorted.map(k => k + signParams[k]).join('');
+      const baseString = sorted.map(k => k + signParams[k]).join('');
       const sign = crypto.createHmac('sha256', appSecret).update(baseString).digest('hex').toUpperCase();
-      const body = new URLSearchParams({ method: apiName, ...signParams, sign }).toString();
+      const body = new URLSearchParams({ ...signParams, sign }).toString();
 
       const apiRes = await fetch('https://api-sg.aliexpress.com/sync', {
         method: 'POST',
@@ -461,6 +462,7 @@ module.exports = async function handler(req, res) {
       const signParams = {
         app_key: appKey,
         keywords: aliQuery,
+        method: apiName,
         page_no: '1',
         page_size: '20',
         ship_to_country: 'KR',
@@ -472,9 +474,9 @@ module.exports = async function handler(req, res) {
         tracking_id: trackingId
       };
       const sorted = Object.keys(signParams).sort();
-      const baseString = apiName + sorted.map(k => k + signParams[k]).join('');
+      const baseString = sorted.map(k => k + signParams[k]).join('');
       const sign = crypto.createHmac('sha256', appSecret).update(baseString).digest('hex').toUpperCase();
-      const body = new URLSearchParams({ method: apiName, ...signParams, sign }).toString();
+      const body = new URLSearchParams({ ...signParams, sign }).toString();
 
       const apiRes = await fetch('https://api-sg.aliexpress.com/sync', {
         method: 'POST',
@@ -493,8 +495,20 @@ module.exports = async function handler(req, res) {
       const list = Array.isArray(rawProducts) ? rawProducts : [];
       const items = list
         .map(p => {
-          const rawPrice = p.target_app_sale_price || p.target_sale_price || p.app_sale_price || p.sale_price || '0';
-          const price = Math.round(parseFloat(String(rawPrice).replace(/[^0-9.]/g, ''))) || 0;
+          let price = 0;
+          const krwRaw = p.target_app_sale_price || p.target_sale_price || '';
+          if (krwRaw) {
+            price = Math.round(parseFloat(String(krwRaw).replace(/[^0-9.]/g, ''))) || 0;
+          }
+          if (!price && p.product_detail_url) {
+            const npiM = String(p.product_detail_url).match(/(?:!|%21)KRW(?:!|%21)\d+(?:!|%21)(\d+)/);
+            if (npiM) price = parseInt(npiM[1], 10) || 0;
+          }
+          if (!price) {
+            const usdRaw = p.app_sale_price || p.sale_price || '';
+            const usdVal = parseFloat(String(usdRaw).replace(/[^0-9.]/g, '')) || 0;
+            if (usdVal > 0) price = Math.round(usdVal * 1380);
+          }
           const id = String(p.product_id || '').trim();
           return {
             id,
